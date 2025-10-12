@@ -5,7 +5,7 @@ import "./globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-  display: 'swap',
+  display: "swap",
   preload: true,
 });
 
@@ -35,11 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body
-        className={`${geistSans.variable} antialiased`}
-      >
-        {children}
-      </body>
+      <body className={`${geistSans.variable} antialiased`}>{children}</body>
     </html>
   );
 }
