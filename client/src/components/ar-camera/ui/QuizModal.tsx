@@ -17,6 +17,19 @@ export const QuizModal = ({
   onSubmit,
 }: QuizModalProps) => {
   const tier = character.tier || getTierFromValue(character.value);
+  const rawImage = character.image?.trim();
+  const isLikelyImageAsset =
+    !!rawImage &&
+    (rawImage.startsWith("http") ||
+      rawImage.startsWith("/") ||
+      /\.(png|jpe?g|gif|webp|svg)$/i.test(rawImage));
+  const imageSrc =
+    isLikelyImageAsset &&
+    rawImage &&
+    !rawImage.startsWith("http") &&
+    !rawImage.startsWith("/")
+      ? `/cards/${rawImage}`
+      : rawImage;
 
   return (
     <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto z-50">
@@ -28,21 +41,43 @@ export const QuizModal = ({
         <div
           className={`border-3 ${getTierBorder(
             tier
-          )} rounded-2xl p-6 mb-6 bg-slate-800/50 shadow-xl`}
+          )} rounded-2xl p-6 mb-6 bg-slate-800/60 shadow-xl`}
         >
           <div className="flex items-center justify-center mb-4">
-            <div className="relative">
-              <div className="w-24 h-24 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl flex items-center justify-center border-2 border-purple-500/30">
-                <span className="text-5xl">{character.image}</span>
+            {rawImage ? (
+              <div className="relative w-28 h-36 rounded-2xl overflow-hidden border-2 border-purple-500/40 shadow-lg shadow-purple-500/30 bg-slate-800/80 flex items-center justify-center">
+                {isLikelyImageAsset ? (
+                  <img
+                    src={imageSrc}
+                    alt={character.name}
+                    className="w-full h-full object-cover"
+                    draggable={false}
+                  />
+                ) : (
+                  <span className="text-5xl" aria-hidden="true">
+                    {rawImage}
+                  </span>
+                )}
+                <div
+                  className={`absolute -top-2 -right-2 px-3 py-1 rounded-full bg-gradient-to-r ${getTierColor(
+                    tier
+                  )} text-white text-xs font-bold shadow-md`}
+                >
+                  {tier}
+                </div>
               </div>
-              <div
-                className={`absolute -top-2 -right-2 px-2 py-1 rounded-full bg-gradient-to-r ${getTierColor(
-                  tier
-                )} text-white text-xs font-bold`}
-              >
-                {tier}
+            ) : (
+              <div className="relative w-28 h-36 rounded-2xl border-2 border-dashed border-purple-500/40 bg-slate-800/60 flex items-center justify-center text-purple-300 text-xs text-center px-4">
+                Card art coming soon
+                <div
+                  className={`absolute -top-2 -right-2 px-3 py-1 rounded-full bg-gradient-to-r ${getTierColor(
+                    tier
+                  )} text-white text-xs font-bold shadow-md`}
+                >
+                  {tier}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <h3 className="text-lg font-semibold text-purple-300 mb-4 text-center">

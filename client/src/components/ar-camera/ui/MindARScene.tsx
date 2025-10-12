@@ -7,6 +7,7 @@ interface MindARSceneProps {
   characters: Character[];
   animationMixerAvailable: boolean;
   registerTargetRef: (id: string) => (el: Element | null) => void;
+  activeMindFile: string | null;
 }
 
 export const MindARScene = ({
@@ -14,15 +15,22 @@ export const MindARScene = ({
   characters,
   animationMixerAvailable,
   registerTargetRef,
+  activeMindFile,
 }: MindARSceneProps) => {
   // Use the first character's mindFile
   // Note: MindAR can only load one .mind file at a time
   // To scan multiple characters, you need to switch .mind files or compile them into one
   const targetSrc = useMemo(() => {
+    if (activeMindFile) return activeMindFile;
     return characters.length > 0
       ? characters[0].mindFile
       : "/ar-targets/default.mind";
-  }, [characters]);
+  }, [activeMindFile, characters]);
+
+  const targetCharacters = useMemo(() => {
+    if (!activeMindFile) return characters;
+    return characters.filter((character) => character.mindFile === activeMindFile);
+  }, [characters, activeMindFile]);
 
   return createElement(
     "a-scene",
@@ -31,7 +39,8 @@ export const MindARScene = ({
       // Single target per .mind file - no targetIndex needed
       "mindar-image": `imageTargetSrc: ${targetSrc}; filterMinCF:0.0001; filterBeta: 10`,
       "color-space": "sRGB",
-      renderer: "colorManagement: true, physicallyCorrectLights",
+      renderer:
+        "colorManagement: true, physicallyCorrectLights: true, legacyLights: false",
       "vr-mode-ui": "enabled: false",
       "device-orientation-permission-ui": "enabled: false",
       embedded: true,
@@ -40,7 +49,7 @@ export const MindARScene = ({
     createElement(
       "a-assets",
       null,
-      characters
+      targetCharacters
         .filter((character) => !!character.modelUrl)
         .map((character) =>
           createElement("a-asset-item", {
@@ -52,7 +61,6 @@ export const MindARScene = ({
     ),
     createElement("a-camera", {
       position: "0 0 0",
-      "look-controls": "enabled: false",
     }),
     createElement("a-entity", {
       light: "type: ambient; intensity: 1",
@@ -63,17 +71,18 @@ export const MindARScene = ({
     }),
     // Only render the first character (since we load one .mind file at a time)
     characters.length > 0 &&
+      targetCharacters.length > 0 &&
       createElement(
         "a-entity",
         {
-          key: characters[0].id,
-          ref: registerTargetRef(characters[0].id),
+          key: targetCharacters[0].id,
+          ref: registerTargetRef(targetCharacters[0].id),
           // Single target per .mind file, so targetIndex is always 0
           "mindar-image-target": "targetIndex: 0",
         },
-        characters[0].modelUrl
+        targetCharacters[0].modelUrl
           ? createElement("a-gltf-model", {
-              src: `#character-model-${characters[0].id}`,
+              src: `#character-model-${targetCharacters[0].id}`,
               position: "0 -0.25 0",
               rotation: "0 180 0",
               scale: "0.6 0.6 0.6",
@@ -89,7 +98,7 @@ export const MindARScene = ({
                 color: "#4338ca",
               },
               createElement("a-text", {
-                value: characters[0].name,
+                value: targetCharacters[0].name,
                 position: "0 0 0.1",
                 align: "center",
                 width: "1.5",

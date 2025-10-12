@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { catchCharacter } from "@/services/firestore";
 import { useARCharacters } from "./ar-camera/hooks/useARCharacters";
@@ -36,6 +36,16 @@ export default function ARCamera({
   } = useARCharacters();
   const sceneRef = useRef<MindARSceneElement | null>(null);
   const targetRefs = useRef<Record<string, Element | null>>({});
+  const targetListenersRef = useRef<
+    Record<
+      string,
+      {
+        onFound: () => void;
+        onLost: () => void;
+      }
+    >
+  >({});
+  const charactersRef = useRef<Character[]>([]);
   const [detectedCharacter, setDetectedCharacter] = useState<Character | null>(
     null
   );
@@ -46,6 +56,7 @@ export default function ARCamera({
   );
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [isCatching, setIsCatching] = useState(false);
+  const [activeMindFile, setActiveMindFile] = useState<string | null>(null);
   const showQuizRef = useRef(false);
   const activeTargetRef = useRef<string | null>(null);
 
@@ -70,6 +81,40 @@ export default function ARCamera({
     showQuizRef.current = showQuiz;
   }, [showQuiz]);
 
+  useEffect(() => {
+    charactersRef.current = characters;
+  }, [characters]);
+
+  const mindFileGroups = useMemo(() => {
+    const map = new Map<string, Character[]>();
+    characters.forEach((character) => {
+      if (!map.has(character.mindFile)) {
+        map.set(character.mindFile, []);
+      }
+      map.get(character.mindFile)?.push(character);
+    });
+    return Array.from(map.entries()).map(([mindFile, list]) => ({
+      mindFile,
+      characters: list,
+      label:
+        list
+          .map((character) => character.name)
+          .filter(Boolean)
+          .join(", ") || mindFile,
+    }));
+  }, [characters]);
+
+  useEffect(() => {
+    if (mindFileGroups.length === 0) {
+      setActiveMindFile(null);
+      return;
+    }
+
+    if (!activeMindFile || !mindFileGroups.some(({ mindFile }) => mindFile === activeMindFile)) {
+      setActiveMindFile(mindFileGroups[0].mindFile);
+    }
+  }, [mindFileGroups, activeMindFile]);
+
   const stopMindAR = useCallback(() => {
     const sceneEl = sceneRef.current;
     if (!sceneEl) return;
@@ -85,6 +130,17 @@ export default function ARCamera({
   }, []);
 
   useEffect(() => stopMindAR, [stopMindAR]);
+
+  useEffect(() => {
+    activeTargetRef.current = null;
+    setDetectedCharacter(null);
+    setShowQuiz(false);
+    setSelectedAnswer(null);
+    setQuizResult(null);
+    if (activeMindFile) {
+      stopMindAR();
+    }
+  }, [activeMindFile, stopMindAR]);
 
   const handleSceneReady = useCallback(() => {
     setIsSceneReady(true);
@@ -107,8 +163,41 @@ export default function ARCamera({
 
   const registerTargetRef = useCallback((id: string) => {
     return (el: Element | null) => {
+      const existingListeners = targetListenersRef.current[id];
+      const existingElement = targetRefs.current[id];
+
+      if (existingListeners && existingElement) {
+        existingElement.removeEventListener("targetFound", existingListeners.onFound);
+        existingElement.removeEventListener("targetLost", existingListeners.onLost);
+        delete targetListenersRef.current[id];
+      }
+
       if (el) {
         targetRefs.current[id] = el;
+
+        const onFound = () => {
+          const character = charactersRef.current.find((c) => c.id === id);
+          if (!character) return;
+
+          activeTargetRef.current = character.id;
+          setDetectedCharacter(character);
+          setShowQuiz(false);
+          setSelectedAnswer(null);
+          setQuizResult(null);
+        };
+
+        const onLost = () => {
+          if (activeTargetRef.current === id && !showQuizRef.current) {
+            activeTargetRef.current = null;
+            setDetectedCharacter((current) =>
+              current?.id === id ? null : current
+            );
+          }
+        };
+
+        el.addEventListener("targetFound", onFound);
+        el.addEventListener("targetLost", onLost);
+        targetListenersRef.current[id] = { onFound, onLost };
       } else {
         delete targetRefs.current[id];
       }
@@ -116,49 +205,18 @@ export default function ARCamera({
   }, []);
 
   useEffect(() => {
-    if (!scriptsLoaded || !isSceneReady || loadingCharacters) return;
-
-    const listeners: Array<{
-      element: Element;
-      onFound: () => void;
-      onLost: () => void;
-    }> = [];
-
-    characters.forEach((character) => {
-      const element = targetRefs.current[character.id];
-      if (!element) return;
-
-      const onFound = () => {
-        console.log("🎯 Target found:", character.name, character.id);
-        activeTargetRef.current = character.id;
-        setDetectedCharacter(character);
-        console.log("✅ Set detected character:", character);
-        setShowQuiz(false);
-        setSelectedAnswer(null);
-        setQuizResult(null);
-      };
-
-      const onLost = () => {
-        if (activeTargetRef.current === character.id && !showQuizRef.current) {
-          activeTargetRef.current = null;
-          setDetectedCharacter((current) =>
-            current?.id === character.id ? null : current
-          );
-        }
-      };
-
-      element.addEventListener("targetFound", onFound);
-      element.addEventListener("targetLost", onLost);
-      listeners.push({ element, onFound, onLost });
-    });
-
     return () => {
-      listeners.forEach(({ element, onFound, onLost }) => {
-        element.removeEventListener("targetFound", onFound);
-        element.removeEventListener("targetLost", onLost);
+      Object.entries(targetListenersRef.current).forEach(([id, listeners]) => {
+        const element = targetRefs.current[id];
+        if (element) {
+          element.removeEventListener("targetFound", listeners.onFound);
+          element.removeEventListener("targetLost", listeners.onLost);
+        }
       });
+      targetListenersRef.current = {};
+      targetRefs.current = {};
     };
-  }, [scriptsLoaded, isSceneReady, characters, loadingCharacters]);
+  }, []);
 
   const handleCollectClick = () => {
     if (detectedCharacter?.isCaught) return;
@@ -233,12 +291,6 @@ export default function ARCamera({
     onClose();
   }, [onClose, stopMindAR]);
 
-  console.log("🔍 AR Camera render state:", {
-    detectedCharacter: detectedCharacter?.name,
-    showQuiz,
-    shouldShowOverlay: !!(detectedCharacter && !showQuiz),
-  });
-
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       <div className="relative flex-1 overflow-hidden">
@@ -254,15 +306,26 @@ export default function ARCamera({
           characters.length > 0 && (
             <div className="absolute inset-0">
               <MindARScene
+                key={activeMindFile ?? "default"}
                 sceneRef={sceneRef}
                 characters={characters}
                 animationMixerAvailable={animationMixerAvailable}
                 registerTargetRef={registerTargetRef}
+                activeMindFile={activeMindFile}
               />
             </div>
           )}
 
-        <HeaderOverlay teamName={teamName} onClose={handleClose} />
+        <HeaderOverlay
+          teamName={teamName}
+          onClose={handleClose}
+          mindFiles={mindFileGroups.map(({ mindFile, label }) => ({
+            value: mindFile,
+            label,
+          }))}
+          activeMindFile={activeMindFile}
+          onMindFileChange={setActiveMindFile}
+        />
         <FrameOverlay />
         <ScanHint visible={!detectedCharacter && isSceneReady && !showQuiz} />
 

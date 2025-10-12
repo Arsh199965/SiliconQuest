@@ -1,7 +1,7 @@
 export interface Character {
   id: string;
   name: string;
-  image: string;
+  image?: string;
   tier?: "Common" | "Rare" | "Legendary"; // Optional - calculated from value
   question: string;
   options: string[];
@@ -25,7 +25,10 @@ export interface ARCameraProps {
   teamId: string;
   onClose: () => void;
   onCharacterCollected: (
-    character: Pick<Character, "id" | "name" | "image" | "value"> & { tier?: "Common" | "Rare" | "Legendary" }
+    character: Pick<Character, "id" | "name" | "value"> & {
+      image?: string;
+      tier?: "Common" | "Rare" | "Legendary";
+    }
   ) => void;
 }
 

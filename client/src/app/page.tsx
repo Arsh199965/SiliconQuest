@@ -16,7 +16,7 @@ import type { Team, Card } from "@/types";
 interface CaughtCharacter {
   id: string;
   name: string;
-  image: string;
+  image?: string;
   tier?: "Common" | "Rare" | "Legendary"; // Optional - calculated from value
   value: number;
 }

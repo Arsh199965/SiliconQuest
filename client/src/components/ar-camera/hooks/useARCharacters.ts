@@ -10,23 +10,45 @@ interface UseARCharactersResult {
   refetch: () => Promise<void>;
 }
 
+const loggedMissingCharacterIds = new Set<string>();
+
 const validateCharacter = (char: any): char is Character => {
-  const requiredFields = [
-    'id', 'name', 'image', 'question', 'options', 
-    'correctAnswer', 'value', 'isCaught', 'caughtByTeam', 
-    'mindFile'
-  ];
-  
-  const missingFields = requiredFields.filter(field => !(field in char));
-  
-  if (missingFields.length > 0) {
-    console.warn(
-      `Character ${char.name || char.id} is missing required fields:`, 
-      missingFields.join(', ')
-    );
+  if (!char || typeof char !== "object") {
     return false;
   }
-  
+
+  const requiredFields: Array<keyof Character> = [
+    "id",
+    "name",
+    "question",
+    "options",
+    "correctAnswer",
+    "value",
+    "isCaught",
+    "caughtByTeam",
+    "mindFile",
+  ];
+
+  const missingFields = requiredFields.filter((field) => {
+    const value = (char as Record<string, unknown>)[field as string];
+    if (field === "options") {
+      return !Array.isArray(value) || (value as unknown[]).length === 0;
+    }
+    return value === undefined || value === null;
+  });
+
+  if (missingFields.length > 0) {
+    const identifier = String(char.id ?? char.name ?? JSON.stringify(char));
+    if (!loggedMissingCharacterIds.has(identifier)) {
+      loggedMissingCharacterIds.add(identifier);
+      console.warn(
+        `Character ${char.name || char.id || "(unknown)"} is missing required fields:`,
+        missingFields.join(", ")
+      );
+    }
+    return false;
+  }
+
   return true;
 };
 

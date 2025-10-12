@@ -19,7 +19,7 @@ export interface Character {
   id: string;
   name: string;
   tier?: 'Common' | 'Rare' | 'Legendary'; // Optional - will be calculated from value if missing
-  image: string;
+  image?: string;
   question: string;
   options: string[];
   correctAnswer: number;

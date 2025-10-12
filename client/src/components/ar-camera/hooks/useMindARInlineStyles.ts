@@ -14,11 +14,6 @@ export const useMindARInlineStyles = (scriptsLoaded: boolean) => {
         height: 100%;
       }
 
-      .mindar-scene > canvas {
-        position: relative !important;
-        z-index: 1 !important;
-      }
-
       .mindar-ui-overlay {
         display: none !important;
       }
