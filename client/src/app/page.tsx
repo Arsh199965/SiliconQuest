@@ -14,10 +14,11 @@ import {
 import type { Team, Card } from "@/types";
 
 interface CaughtCharacter {
-  id: number;
+  id: string;
   name: string;
-  image: string;
-  tier: "Common" | "Rare" | "Legendary";
+  image?: string;
+  tier?: "Common" | "Rare" | "Legendary"; // Optional - calculated from value
+  value: number;
 }
 
 export default function Home() {
@@ -352,6 +353,7 @@ export default function Home() {
       {isARActive && selectedTeam && (
         <ARCamera
           teamName={selectedTeam.teamName}
+          teamId={selectedTeam.id}
           onClose={handleARClose}
           onCharacterCollected={handleCharacterCollected}
         />
