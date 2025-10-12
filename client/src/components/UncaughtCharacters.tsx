@@ -70,19 +70,11 @@ export default function UncaughtCharacters({
 
   return (
     <div
-      className="absolute inset-0 bg-black/70 backdrop-blur-sm justify-center md:items-center items-center px-4 py-8 md:py-12 animate-fadeIn overflow-hidden"
-      style={{
-        minHeight: "100vh",
-        width: "100vw",
-        height: "100vh",
-      }}
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center px-4 py-8 md:py-12 animate-fadeIn z-50"
       onClick={onClose}
     >
       <div
-        className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md border-2 border-purple-500/50 rounded-3xl w-[95vw] sm:max-w-2xl max-w-lg sm:p-6 p-4 shadow-2xl shadow-purple-500/30 animate-scaleIn mt-[40vh] md:mt-0 mx-[45vw]"
-        style={{
-          maxHeight: "min(90vh, calc(100vh - 4rem))",
-        }}
+        className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md border-2 border-purple-500/50 rounded-3xl w-full max-w-2xl sm:p-6 p-4 shadow-2xl shadow-purple-500/30 animate-scaleIn max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
