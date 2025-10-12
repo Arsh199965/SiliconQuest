@@ -1,5 +1,8 @@
-import type { Metadata, Viewport } from "next";
+'use client';
+
+import { useState } from "react";
 import { Geist } from "next/font/google";
+import AdminPortal from "@/components/AdminPortal";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -8,34 +11,39 @@ const geistSans = Geist({
   display: "swap",
   preload: true,
 });
-
-export const metadata: Metadata = {
-  title: "SiliconQuest - Animeverse Hunt",
-  description: "Start your character hunting adventure in Animeverse",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "SiliconQuest",
-  },
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: "#0a0a0a",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [isPortalOpen, setIsPortalOpen] = useState(false);
+
   return (
     <html lang="en" className="dark">
-      <body className={`${geistSans.variable} antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} antialiased`}>
+        {/* Admin Portal Trigger */}
+        <a
+          href="https://acm.upr.edu/about/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed top-4 right-4 text-slate-600 hover:text-slate-500 transition-colors z-50 text-sm"
+        >
+          acm usar
+        </a>
+        <div
+          onClick={() => setIsPortalOpen(true)}
+          className="fixed top-4 right-20 text-slate-600 hover:text-slate-500 transition-colors cursor-pointer z-50 text-sm"
+        >
+          admin
+        </div>
+
+        {/* Admin Portal */}
+        {isPortalOpen && (
+          <AdminPortal onClose={() => setIsPortalOpen(false)} />
+        )}
+
+        {children}
+      </body>
     </html>
   );
 }
