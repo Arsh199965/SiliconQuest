@@ -375,7 +375,7 @@ export default function ARCamera({
           !arError &&
           !loadingCharacters &&
           currentTierCharacters.length > 0 && (
-            <div className="absolute inset-0">
+            <div className="absolute inset-0 w-[100vw] h-[100vh] sm:mx-0 mx-[30vw]">
               <MindARScene
                 key={selectedTier}
                 sceneRef={sceneRef}
