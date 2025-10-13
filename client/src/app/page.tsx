@@ -11,6 +11,7 @@ import {
   getUncaughtCards,
   getCardsCaughtByTeam,
 } from "@/services/firestore";
+import { getImageSrc, shouldDisplayAsText } from "@/utils/imageUtils";
 import type { Team, Card } from "@/types";
 
 interface CaughtCharacter {
@@ -126,6 +127,13 @@ export default function Home() {
     );
   };
 
+  const handleChangeTeam = () => {
+    setSelectedTeamId(null);
+    localStorage.removeItem("selectedTeamId");
+    setCharactersCaught([]);
+    setIsARActive(false);
+  };
+
   const selectedTeam = teams.find((t) => t.id === selectedTeamId);
 
   if (isLoadingTeams) {
@@ -192,10 +200,21 @@ export default function Home() {
 
           {/* Main Game Card */}
           <main className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-sm border border-purple-500/20 rounded-3xl p-6 shadow-2xl shadow-purple-500/20">
-            {/* Title */}
-            <h1 className="text-center text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-6 tracking-tight">
-              {selectedTeam ? "Hunt is On!!" : "Let's start hunting"}
-            </h1>
+            {/* Title & Change Team */}
+            <div className="flex items-center justify-between mb-6">
+              <h1 className={`flex-1 ${selectedTeam ? "text-left" : "text-center"} text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 tracking-tight`}>
+                {selectedTeam ? "Hunt is On!!" : "Let's start hunting"}
+              </h1>
+              {selectedTeam && (
+                <button
+                  type="button"
+                  onClick={handleChangeTeam}
+                  className="ml-4 whitespace-nowrap rounded-lg bg-slate-800/70 border border-purple-500/40 px-4 py-2 text-sm font-medium text-purple-200 hover:border-purple-400 hover:text-purple-100 transition-colors"
+                >
+                  Change Team
+                </button>
+              )}
+            </div>
 
             {/* Pokeball Icon */}
             <Pokeball
@@ -299,19 +318,48 @@ export default function Home() {
                         id="characters-container"
                         className="flex gap-3 overflow-x-auto flex-1 scrollbar-hide scroll-smooth"
                       >
-                        {charactersCaught.map((character) => (
-                          <div
-                            key={character.id}
-                            className="flex-shrink-0 w-24 h-32 bg-gradient-to-br from-slate-700/50 to-slate-800/50 border-2 border-purple-500/40 rounded-xl flex flex-col items-center justify-center hover:border-purple-400 transition-all duration-300 hover:scale-105 cursor-pointer"
-                          >
-                            <div className="text-4xl mb-2">
-                              {character.image ?? "❓"}
+                        {charactersCaught.map((character) => {
+                          const imageSrc = getImageSrc(character.image);
+                          const displayAsText = shouldDisplayAsText(character.image);
+                          
+                          return (
+                            <div
+                              key={character.id}
+                              className="flex-shrink-0 w-24 bg-gradient-to-br from-slate-700/50 to-slate-800/50 border-2 border-purple-500/40 rounded-xl flex flex-col hover:border-purple-400 transition-all duration-300 hover:scale-105 cursor-pointer"
+                            >
+                              {/* Image/Emoji Container - Fixed height */}
+                              <div className="h-24 w-full overflow-hidden rounded-t-xl">
+                                {imageSrc ? (
+                                  <img
+                                    src={imageSrc}
+                                    alt={character.name}
+                                    className="w-full h-full object-cover"
+                                    draggable={false}
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    {displayAsText ? (
+                                      <div className="text-3xl">
+                                        {character.image?.trim()}
+                                      </div>
+                                    ) : (
+                                      <div className="text-3xl">❓</div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              {/* Name Container - Fixed height */}
+                              <div className="h-8 flex items-center justify-center px-2 py-1 bg-slate-900/50 rounded-b-xl border-t border-purple-500/20">
+                                <div className="text-xs text-purple-200 font-medium text-center line-clamp-2 w-full">
+                                  {character.name}
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-xs text-purple-200 font-medium text-center px-2">
-                              {character.name}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       <button
