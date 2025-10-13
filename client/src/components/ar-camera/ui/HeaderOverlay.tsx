@@ -31,7 +31,9 @@ export const HeaderOverlay = ({
 
       {mindFiles && mindFiles.length > 1 && onMindFileChange && (
         <div className="flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-wider text-slate-300/80">Target file</span>
+          <span className="text-xs uppercase tracking-wider text-slate-300/80">
+            Target file
+          </span>
           <div className="flex flex-wrap gap-2">
             {mindFiles.map((option) => {
               const isActive = option.value === activeMindFile;

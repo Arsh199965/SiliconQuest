@@ -1,11 +1,14 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { checkCounters, initializeFirestoreCounters } from '@/lib/firestoreSetup';
-import TeamForm from './TeamForm';
-import CardForm from './CardForm';
+import { useState, useEffect } from "react";
+import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import {
+  checkCounters,
+  initializeFirestoreCounters,
+} from "@/lib/firestoreSetup";
+import TeamForm from "./TeamForm";
+import CardForm from "./CardForm";
 
 interface Team {
   id: string;
@@ -31,14 +34,14 @@ interface AdminPortalProps {
 }
 
 export default function AdminPortal({ onClose }: AdminPortalProps) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentView, setCurrentView] = useState<'teams' | 'cards'>('teams');
+  const [currentView, setCurrentView] = useState<"teams" | "cards">("teams");
   const [initializingCounters, setInitializingCounters] = useState(false);
   const [setupRequired, setSetupRequired] = useState(false);
-  
+
   // Team management state
   const [teams, setTeams] = useState<Team[]>([]);
   const [isTeamFormOpen, setIsTeamFormOpen] = useState(false);
@@ -62,9 +65,9 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
   useEffect(() => {
     if (!isLoggedIn || setupRequired) return;
 
-    if (currentView === 'teams') {
+    if (currentView === "teams") {
       fetchTeams();
-    } else if (currentView === 'cards') {
+    } else if (currentView === "cards") {
       fetchCards();
     }
   }, [isLoggedIn, currentView, setupRequired]);
@@ -78,15 +81,15 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
   const fetchTeams = async () => {
     setIsLoading(true);
     try {
-      const teamsCollection = collection(db, 'teams');
+      const teamsCollection = collection(db, "teams");
       const teamsSnapshot = await getDocs(teamsCollection);
-      const teamsData = teamsSnapshot.docs.map(doc => ({
+      const teamsData = teamsSnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       })) as Team[];
       setTeams(teamsData);
     } catch (err) {
-      console.error('Error fetching teams:', err);
+      console.error("Error fetching teams:", err);
     } finally {
       setIsLoading(false);
     }
@@ -95,15 +98,15 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
   const fetchCards = async () => {
     setIsLoading(true);
     try {
-      const cardsCollection = collection(db, 'cards');
+      const cardsCollection = collection(db, "cards");
       const cardsSnapshot = await getDocs(cardsCollection);
-      const cardsData = cardsSnapshot.docs.map(doc => ({
+      const cardsData = cardsSnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       })) as Card[];
       setCards(cardsData);
     } catch (err) {
-      console.error('Error fetching cards:', err);
+      console.error("Error fetching cards:", err);
     } finally {
       setIsLoading(false);
     }
@@ -111,13 +114,15 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (username === process.env.NEXT_PUBLIC_ADMIN_USER && 
-        password === process.env.NEXT_PUBLIC_ADMIN_PASS) {
+
+    if (
+      username === process.env.NEXT_PUBLIC_ADMIN_USER &&
+      password === process.env.NEXT_PUBLIC_ADMIN_PASS
+    ) {
       setIsLoggedIn(true);
-      setError('');
+      setError("");
     } else {
-      setError('Invalid credentials');
+      setError("Invalid credentials");
     }
   };
 
@@ -128,11 +133,11 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
     }
 
     try {
-      await deleteDoc(doc(db, 'teams', teamId));
-      setTeams(teams.filter(team => team.id !== teamId));
+      await deleteDoc(doc(db, "teams", teamId));
+      setTeams(teams.filter((team) => team.id !== teamId));
       setDeleteConfirm(null);
     } catch (err) {
-      console.error('Error deleting team:', err);
+      console.error("Error deleting team:", err);
     }
   };
 
@@ -143,11 +148,11 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
     }
 
     try {
-      await deleteDoc(doc(db, 'cards', cardId));
-      setCards(cards.filter(card => card.id !== cardId));
+      await deleteDoc(doc(db, "cards", cardId));
+      setCards(cards.filter((card) => card.id !== cardId));
       setDeleteConfirm(null);
     } catch (err) {
-      console.error('Error deleting card:', err);
+      console.error("Error deleting card:", err);
     }
   };
 
@@ -161,8 +166,18 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
             className="text-gray-400 hover:text-gray-200 transition-colors"
             aria-label="Close"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -171,7 +186,10 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
           {!isLoggedIn ? (
             <form onSubmit={handleLogin} className="space-y-4 max-w-md mx-auto">
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-200 mb-1">
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-medium text-gray-200 mb-1"
+                >
                   Username
                 </label>
                 <input
@@ -188,7 +206,10 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-200 mb-1">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-200 mb-1"
+                >
                   Password
                 </label>
                 <input
@@ -204,9 +225,7 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
                 />
               </div>
 
-              {error && (
-                <p className="text-red-400 text-sm mt-2">{error}</p>
-              )}
+              {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
 
               <button
                 type="submit"
@@ -222,9 +241,12 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
             <div className="text-gray-200">
               {setupRequired ? (
                 <div className="text-center py-8">
-                  <h3 className="text-xl font-semibold text-white mb-4">First-Time Setup Required</h3>
+                  <h3 className="text-xl font-semibold text-white mb-4">
+                    First-Time Setup Required
+                  </h3>
                   <p className="text-gray-400 mb-6">
-                    The admin portal needs to initialize some required documents in Firestore.
+                    The admin portal needs to initialize some required documents
+                    in Firestore.
                   </p>
                   <button
                     onClick={async () => {
@@ -233,8 +255,10 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
                         await initializeFirestoreCounters();
                         setSetupRequired(false);
                       } catch (err) {
-                        console.error('Error initializing counters:', err);
-                        setError('Failed to initialize counters. Please try again.');
+                        console.error("Error initializing counters:", err);
+                        setError(
+                          "Failed to initialize counters. Please try again."
+                        );
                       } finally {
                         setInitializingCounters(false);
                       }
@@ -244,7 +268,9 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
                              focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50"
                     disabled={initializingCounters}
                   >
-                    {initializingCounters ? 'Initializing...' : 'Initialize Admin Portal'}
+                    {initializingCounters
+                      ? "Initializing..."
+                      : "Initialize Admin Portal"}
                   </button>
                   {error && (
                     <p className="mt-4 text-red-400 text-sm">{error}</p>
@@ -254,31 +280,33 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
                 <>
                   <div className="flex gap-4 mb-6">
                     <button
-                      onClick={() => setCurrentView('teams')}
+                      onClick={() => setCurrentView("teams")}
                       className={`px-4 py-2 rounded-md transition-colors ${
-                        currentView === 'teams'
-                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                          : 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'
+                        currentView === "teams"
+                          ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                          : "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white"
                       }`}
                     >
                       Manage Teams
                     </button>
                     <button
-                      onClick={() => setCurrentView('cards')}
+                      onClick={() => setCurrentView("cards")}
                       className={`px-4 py-2 rounded-md transition-colors ${
-                        currentView === 'cards'
-                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                          : 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'
+                        currentView === "cards"
+                          ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                          : "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white"
                       }`}
                     >
                       Manage Cards
                     </button>
                   </div>
 
-                  {currentView === 'teams' && (
+                  {currentView === "teams" && (
                     <div>
                       <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-xl font-semibold text-white">Teams</h3>
+                        <h3 className="text-xl font-semibold text-white">
+                          Teams
+                        </h3>
                         <button
                           onClick={() => {
                             setTeamToEdit(null);
@@ -292,9 +320,13 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
                       </div>
 
                       {isLoading ? (
-                        <p className="text-center py-4 text-gray-400">Loading teams...</p>
+                        <p className="text-center py-4 text-gray-400">
+                          Loading teams...
+                        </p>
                       ) : teams.length === 0 ? (
-                        <p className="text-center py-4 text-gray-400">No teams found</p>
+                        <p className="text-center py-4 text-gray-400">
+                          No teams found
+                        </p>
                       ) : (
                         <div className="overflow-x-auto">
                           <table className="min-w-full divide-y divide-gray-700">
@@ -313,7 +345,10 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
                             </thead>
                             <tbody className="divide-y divide-gray-700">
                               {teams.map((team) => (
-                                <tr key={team.id} className="bg-gray-800 hover:bg-gray-700">
+                                <tr
+                                  key={team.id}
+                                  className="bg-gray-800 hover:bg-gray-700"
+                                >
                                   <td className="px-6 py-4 whitespace-nowrap text-gray-300">
                                     {team.teamName}
                                   </td>
@@ -334,7 +369,9 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
                                       onClick={() => handleDeleteTeam(team.id)}
                                       className="text-red-400 hover:text-red-300 transition-colors"
                                     >
-                                      {deleteConfirm === team.id ? 'Confirm Delete?' : 'Delete'}
+                                      {deleteConfirm === team.id
+                                        ? "Confirm Delete?"
+                                        : "Delete"}
                                     </button>
                                   </td>
                                 </tr>
@@ -356,10 +393,12 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
                     </div>
                   )}
 
-                  {currentView === 'cards' && (
+                  {currentView === "cards" && (
                     <div>
                       <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-xl font-semibold text-white">Cards</h3>
+                        <h3 className="text-xl font-semibold text-white">
+                          Cards
+                        </h3>
                         <button
                           onClick={() => {
                             setCardToEdit(null);
@@ -373,16 +412,26 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
                       </div>
 
                       {isLoading ? (
-                        <p className="text-center py-4 text-gray-400">Loading cards...</p>
+                        <p className="text-center py-4 text-gray-400">
+                          Loading cards...
+                        </p>
                       ) : cards.length === 0 ? (
-                        <p className="text-center py-4 text-gray-400">No cards found</p>
+                        <p className="text-center py-4 text-gray-400">
+                          No cards found
+                        </p>
                       ) : (
                         <div className="overflow-x-auto">
                           <table className="min-w-full divide-y divide-gray-700">
                             <thead>
                               <tr>
                                 <th className="px-6 py-3 bg-gray-800 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                  ID
+                                </th>
+                                <th className="px-6 py-3 bg-gray-800 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                                   Name
+                                </th>
+                                <th className="px-6 py-3 bg-gray-800 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                  Value
                                 </th>
                                 <th className="px-6 py-3 bg-gray-800 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                                   Question
@@ -397,20 +446,43 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
                             </thead>
                             <tbody className="divide-y divide-gray-700">
                               {cards.map((card) => (
-                                <tr key={card.id} className="bg-gray-800 hover:bg-gray-700">
+                                <tr
+                                  key={card.id}
+                                  className="bg-gray-800 hover:bg-gray-700"
+                                >
+                                  <td className="px-6 py-4 whitespace-nowrap text-gray-400 text-sm font-mono">
+                                    {card.id}
+                                  </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-gray-300">
                                     {card.name}
                                   </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <span
+                                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                        (card as any).value === 50
+                                          ? "bg-purple-900/50 text-purple-300"
+                                          : (card as any).value === 20
+                                          ? "bg-blue-900/50 text-blue-300"
+                                          : "bg-gray-700/50 text-gray-300"
+                                      }`}
+                                    >
+                                      {(card as any).value || "N/A"}
+                                    </span>
+                                  </td>
                                   <td className="px-6 py-4 text-gray-300">
-                                    <div className="line-clamp-2">{card.question}</div>
+                                    <div className="line-clamp-2">
+                                      {card.question}
+                                    </div>
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`px-2 py-1 rounded-full text-xs ${
-                                      card.isCaught
-                                        ? 'bg-green-900/50 text-green-400'
-                                        : 'bg-yellow-900/50 text-yellow-400'
-                                    }`}>
-                                      {card.isCaught ? 'Caught' : 'Available'}
+                                    <span
+                                      className={`px-2 py-1 rounded-full text-xs ${
+                                        card.isCaught
+                                          ? "bg-green-900/50 text-green-400"
+                                          : "bg-yellow-900/50 text-yellow-400"
+                                      }`}
+                                    >
+                                      {card.isCaught ? "Caught" : "Available"}
                                     </span>
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap space-x-4">
@@ -427,7 +499,9 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
                                       onClick={() => handleDeleteCard(card.id)}
                                       className="text-red-400 hover:text-red-300 transition-colors"
                                     >
-                                      {deleteConfirm === card.id ? 'Confirm Delete?' : 'Delete'}
+                                      {deleteConfirm === card.id
+                                        ? "Confirm Delete?"
+                                        : "Delete"}
                                     </button>
                                   </td>
                                 </tr>

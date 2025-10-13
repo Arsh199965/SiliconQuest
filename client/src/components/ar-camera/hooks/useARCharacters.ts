@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 
 import { getARCharacters } from "@/services/firestore";
-import { Character } from "../types";
+import { Character, CharactersByTier, getTierFromValue } from "../types";
 
 interface UseARCharactersResult {
-  characters: Character[];
+  charactersByTier: CharactersByTier;
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -26,7 +26,6 @@ const validateCharacter = (char: any): char is Character => {
     "value",
     "isCaught",
     "caughtByTeam",
-    "mindFile",
   ];
 
   const missingFields = requiredFields.filter((field) => {
@@ -53,7 +52,11 @@ const validateCharacter = (char: any): char is Character => {
 };
 
 export const useARCharacters = (): UseARCharactersResult => {
-  const [characters, setCharacters] = useState<Character[]>([]);
+  const [charactersByTier, setCharactersByTier] = useState<CharactersByTier>({
+    Common: [],
+    Rare: [],
+    Legendary: [],
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,22 +65,43 @@ export const useARCharacters = (): UseARCharactersResult => {
       setLoading(true);
       setError(null);
       const data = await getARCharacters();
-      
+
       // Filter out invalid characters
       const validCharacters = data.filter(validateCharacter);
-      
+
       if (validCharacters.length === 0 && data.length > 0) {
         setError(
           "No valid AR characters found. Please check Firestore schema. " +
-          "See FIRESTORE_SCHEMA.md for required fields."
+            "See FIRESTORE_SCHEMA.md for required fields."
         );
       } else if (validCharacters.length < data.length) {
         console.warn(
           `${data.length - validCharacters.length} character(s) skipped due to missing fields`
         );
       }
-      
-      setCharacters(validCharacters);
+
+      // Group characters by tier
+      const grouped: CharactersByTier = {
+        Common: [],
+        Rare: [],
+        Legendary: [],
+      };
+
+      validCharacters.forEach((char) => {
+        const tier = char.tier || getTierFromValue(char.value);
+        if (tier in grouped) {
+          grouped[tier].push(char);
+        }
+      });
+
+      // Sort each tier by ID to ensure correct target mapping
+      Object.keys(grouped).forEach((tier) => {
+        grouped[tier as keyof CharactersByTier].sort((a, b) =>
+          a.id.localeCompare(b.id)
+        );
+      });
+
+      setCharactersByTier(grouped);
     } catch (err) {
       console.error("Error fetching AR characters:", err);
       setError("Failed to load characters");
@@ -91,7 +115,7 @@ export const useARCharacters = (): UseARCharactersResult => {
   }, []);
 
   return {
-    characters,
+    charactersByTier,
     loading,
     error,
     refetch: fetchCharacters,
