@@ -23,3 +23,49 @@ export const getTierBorder = (tier: string) => {
       return "border-slate-400 shadow-slate-500/50";
   }
 };
+
+export const getTierFrameColor = (tier: string): string => {
+  switch (tier) {
+    case "Legendary":
+      return "#FFD700"; // Golden
+    case "Rare":
+      return "#C0C0C0"; // Silver
+    case "Common":
+      return "#8b5cf6"; // Purple
+    default:
+      return "#8b5cf6";
+  }
+};
+
+export const getTierThemeColor = (tier: string) => {
+  switch (tier) {
+    case "Legendary":
+      return {
+        primary: "amber-400",
+        secondary: "orange-500",
+        glow: "amber-500/50",
+        hex: "#FFD700",
+      };
+    case "Rare":
+      return {
+        primary: "gray-300",
+        secondary: "gray-400",
+        glow: "gray-400/50",
+        hex: "#C0C0C0",
+      };
+    case "Common":
+      return {
+        primary: "purple-400",
+        secondary: "purple-500",
+        glow: "purple-500/50",
+        hex: "#8b5cf6",
+      };
+    default:
+      return {
+        primary: "purple-400",
+        secondary: "purple-500",
+        glow: "purple-500/50",
+        hex: "#8b5cf6",
+      };
+  }
+};
