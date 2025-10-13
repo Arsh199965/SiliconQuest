@@ -29,6 +29,7 @@ export const MindARScene = ({
     "a-scene",
     {
       ref: sceneRef,
+      // here - MindAR automatically accesses device camera when mindar-image is initialized
       "mindar-image": `imageTargetSrc: ${targetSrc}; filterMinCF:0.0001; filterBeta: 10`,
       "color-space": "sRGB",
       renderer:
@@ -36,7 +37,7 @@ export const MindARScene = ({
       "vr-mode-ui": "enabled: false",
       "device-orientation-permission-ui": "enabled: false",
       embedded: true,
-      className: "mindar-scene w-full h-full",
+      className: "mindar-scene w-[100vw] h-[100vh]",
     },
     createElement(
       "a-assets",
@@ -51,6 +52,7 @@ export const MindARScene = ({
           })
         )
     ),
+    // here - a-camera element renders the AR camera view
     createElement("a-camera", {
       position: "0 0 0",
     }),
