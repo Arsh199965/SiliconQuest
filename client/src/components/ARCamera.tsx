@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { catchCharacter } from "@/services/firestore";
+import {
+  clearCooldown,
+  getCooldownRemaining,
+  setWrongAnswerCooldown,
+} from "@/utils/quizCooldown";
 import { useARCharacters } from "./ar-camera/hooks/useARCharacters";
 import { useMindARInlineStyles } from "./ar-camera/hooks/useMindARInlineStyles";
 import { useMindARScripts } from "./ar-camera/hooks/useMindARScripts";
@@ -58,6 +63,8 @@ export default function ARCamera({
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [isCatching, setIsCatching] = useState(false);
   const [selectedTier, setSelectedTier] = useState<Tier>("Common");
+  const [cooldownSeconds, setCooldownSeconds] = useState<number | null>(null);
+  const cooldownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const showQuizRef = useRef(false);
   const activeTargetRef = useRef<{
     characterId: string;
@@ -115,6 +122,50 @@ export default function ARCamera({
 
   useEffect(() => stopMindAR, [stopMindAR]);
 
+  // Cooldown timer management
+  const startCooldownTimer = useCallback((characterId: string) => {
+    if (cooldownIntervalRef.current) {
+      clearInterval(cooldownIntervalRef.current);
+      cooldownIntervalRef.current = null;
+    }
+
+    const updateCooldown = () => {
+      const remaining = getCooldownRemaining(characterId);
+      if (remaining === null) {
+        setCooldownSeconds(null);
+        if (cooldownIntervalRef.current) {
+          clearInterval(cooldownIntervalRef.current);
+          cooldownIntervalRef.current = null;
+        }
+      } else {
+        setCooldownSeconds(remaining);
+      }
+    };
+
+    // Update immediately
+    updateCooldown();
+
+    // Then update every second
+    cooldownIntervalRef.current = setInterval(updateCooldown, 1000);
+  }, []);
+
+  const clearCooldownTimer = useCallback(() => {
+    if (cooldownIntervalRef.current) {
+      clearInterval(cooldownIntervalRef.current);
+      cooldownIntervalRef.current = null;
+    }
+    setCooldownSeconds(null);
+  }, []);
+
+  // Cleanup cooldown timer on unmount
+  useEffect(() => {
+    return () => {
+      if (cooldownIntervalRef.current) {
+        clearInterval(cooldownIntervalRef.current);
+      }
+    };
+  }, []);
+
   // Reset detection state when tier changes
   useEffect(() => {
     activeTargetRef.current = null;
@@ -122,8 +173,9 @@ export default function ARCamera({
     setShowQuiz(false);
     setSelectedAnswer(null);
     setQuizResult(null);
+    clearCooldownTimer();
     stopMindAR();
-  }, [selectedTier, stopMindAR]);
+  }, [selectedTier, stopMindAR, clearCooldownTimer]);
 
   const handleSceneReady = useCallback(() => {
     setIsSceneReady(true);
@@ -170,6 +222,13 @@ export default function ARCamera({
             const character = charactersMapRef.current.get(characterId);
             if (!character) return;
 
+            // Check if character is on cooldown
+            const cooldown = getCooldownRemaining(characterId);
+            if (cooldown !== null) {
+              setCooldownSeconds(cooldown);
+              startCooldownTimer(characterId);
+            }
+
             activeTargetRef.current = { characterId, targetIndex };
             setDetectedCharacter(character);
             setShowQuiz(false);
@@ -187,6 +246,8 @@ export default function ARCamera({
               setDetectedCharacter((current) =>
                 current?.id === characterId ? null : current
               );
+              // Clear cooldown timer when target is lost
+              clearCooldownTimer();
             }
           };
 
@@ -217,6 +278,8 @@ export default function ARCamera({
 
   const handleCollectClick = () => {
     if (detectedCharacter?.isCaught) return;
+    // Don't allow starting quiz if on cooldown
+    if (cooldownSeconds !== null && cooldownSeconds > 0) return;
     setShowQuiz(true);
   };
 
@@ -234,6 +297,10 @@ export default function ARCamera({
       setIsCatching(true);
 
       try {
+        // Clear cooldown on correct answer
+        clearCooldown(detectedCharacter.id);
+        clearCooldownTimer();
+
         // Update Firestore: mark character as caught and update team
         await catchCharacter(
           detectedCharacter.id,
@@ -241,7 +308,7 @@ export default function ARCamera({
           detectedCharacter.value
         );
 
-        // Notify parent component
+        // Notify parent component and close AR camera
         setTimeout(() => {
           onCharacterCollected({
             id: detectedCharacter.id,
@@ -256,12 +323,8 @@ export default function ARCamera({
           // Refresh character list to reflect caught status
           refetch();
 
-          activeTargetRef.current = null;
-          setShowQuiz(false);
-          setDetectedCharacter(null);
-          setSelectedAnswer(null);
-          setQuizResult(null);
-          setIsCatching(false);
+          // Close AR camera and return to home page
+          handleClose();
         }, 1200);
       } catch (error) {
         console.error("Error catching character:", error);
@@ -271,22 +334,31 @@ export default function ARCamera({
       }
     } else {
       setQuizResult("incorrect");
+
+      // Set progressive cooldown for wrong answer
+      const cooldownDuration = setWrongAnswerCooldown(detectedCharacter.id);
+      console.log(`Wrong answer! Cooldown set for ${cooldownDuration} seconds`);
+
       setTimeout(() => {
         setQuizResult(null);
         setSelectedAnswer(null);
+        setShowQuiz(false);
+        // Start cooldown timer
+        startCooldownTimer(detectedCharacter.id);
       }, 1500);
     }
   };
 
   const handleClose = useCallback(() => {
     stopMindAR();
+    clearCooldownTimer();
     activeTargetRef.current = null;
     setDetectedCharacter(null);
     setShowQuiz(false);
     setSelectedAnswer(null);
     setQuizResult(null);
     onClose();
-  }, [onClose, stopMindAR]);
+  }, [onClose, stopMindAR, clearCooldownTimer]);
 
   const currentTierCharacters = charactersByTier[selectedTier];
 
@@ -326,7 +398,7 @@ export default function ARCamera({
           activeMindFile={selectedTier}
           onMindFileChange={(tier) => setSelectedTier(tier as Tier)}
         />
-        <FrameOverlay />
+        <FrameOverlay tier={selectedTier} />
         <ScanHint visible={!detectedCharacter && isSceneReady && !showQuiz} />
 
         {detectedCharacter && !showQuiz && (
@@ -334,6 +406,7 @@ export default function ARCamera({
             character={detectedCharacter}
             onCollect={handleCollectClick}
             isCaught={detectedCharacter.isCaught}
+            cooldownSeconds={cooldownSeconds}
           />
         )}
 

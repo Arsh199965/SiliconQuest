@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getUncaughtCards } from "@/services/firestore";
+import { getImageSrc, shouldDisplayAsText } from "@/utils/imageUtils";
 import type { Card } from "@/types";
 
 interface UncaughtCharactersProps {
@@ -133,22 +134,42 @@ export default function UncaughtCharacters({
             </div>
           ) : (
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
-              {uncaughtCards.map((card) => (
-                <div
-                  key={card.id}
-                  className={`flex-shrink-0 w-40 sm:w-48 bg-gradient-to-br from-slate-800/50 to-slate-700/50 border-2 ${getTierBorder(
-                    card.tier
-                  )} rounded-2xl p-4 hover:scale-105 transition-all duration-300 cursor-pointer shadow-lg`}
-                >
-                  <div className="flex flex-col items-center text-center">
-                    {/* Character Image/Emoji */}
-                    <div className="w-20 h-20 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl flex items-center justify-center mb-3 border border-purple-500/30">
-                      {card.image ? (
-                        <span className="text-4xl">{card.image}</span>
-                      ) : (
-                        <span className="text-4xl">❓</span>
-                      )}
-                    </div>
+              {uncaughtCards.map((card) => {
+                const imageSrc = getImageSrc(card.image);
+                const displayAsText = shouldDisplayAsText(card.image);
+                
+                return (
+                  <div
+                    key={card.id}
+                    className={`flex-shrink-0 w-40 sm:w-48 bg-gradient-to-br from-slate-800/50 to-slate-700/50 border-2 ${getTierBorder(
+                      card.tier
+                    )} rounded-2xl p-4 hover:scale-105 transition-all duration-300 cursor-pointer shadow-lg`}
+                  >
+                    <div className="flex flex-col items-center text-center">
+                      {/* Character Image/Emoji */}
+                      <div className="w-20 h-20 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl flex items-center justify-center mb-3 border border-purple-500/30 overflow-hidden">
+                        {imageSrc ? (
+                          <img
+                            src={imageSrc}
+                            alt={card.name}
+                            className="w-full h-full object-cover"
+                            draggable={false}
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const parent = e.currentTarget.parentElement;
+                              if (parent) {
+                                parent.innerHTML = displayAsText 
+                                  ? `<span class="text-4xl">${card.image?.trim()}</span>`
+                                  : '<span class="text-4xl">❓</span>';
+                              }
+                            }}
+                          />
+                        ) : displayAsText ? (
+                          <span className="text-4xl">{card.image?.trim()}</span>
+                        ) : (
+                          <span className="text-4xl">❓</span>
+                        )}
+                      </div>
 
                     {/* Character Name */}
                     <h3 className="text-sm font-semibold text-purple-300 mb-2 truncate w-full">
@@ -166,13 +187,14 @@ export default function UncaughtCharacters({
                       </div>
                     )}
 
-                    {/* Value */}
-                    <div className="text-amber-400 font-bold text-sm">
-                      {card.value} pts
+                      {/* Value */}
+                      <div className="text-amber-400 font-bold text-sm">
+                        {card.value} pts
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

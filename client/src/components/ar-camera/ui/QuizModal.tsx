@@ -1,5 +1,10 @@
+import { getImageSrc, shouldDisplayAsText } from "@/utils/imageUtils";
 import { Character, getTierFromValue } from "../types";
-import { getTierBorder, getTierColor } from "../utils/tierStyles";
+import {
+  getTierBorder,
+  getTierColor,
+  getTierThemeColor,
+} from "../utils/tierStyles";
 
 interface QuizModalProps {
   character: Character;
@@ -17,24 +22,20 @@ export const QuizModal = ({
   onSubmit,
 }: QuizModalProps) => {
   const tier = character.tier || getTierFromValue(character.value);
-  const rawImage = character.image?.trim();
-  const isLikelyImageAsset =
-    !!rawImage &&
-    (rawImage.startsWith("http") ||
-      rawImage.startsWith("/") ||
-      /\.(png|jpe?g|gif|webp|svg)$/i.test(rawImage));
-  const imageSrc =
-    isLikelyImageAsset &&
-    rawImage &&
-    !rawImage.startsWith("http") &&
-    !rawImage.startsWith("/")
-      ? `/cards/${rawImage}`
-      : rawImage;
+  const themeColor = getTierThemeColor(tier);
+  
+  const imageSrc = getImageSrc(character.image);
+  const displayAsText = shouldDisplayAsText(character.image);
+  const hasContent = imageSrc || displayAsText;
 
   return (
     <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto z-50">
-      <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md border-2 border-purple-500/50 rounded-3xl p-6 max-w-lg w-full shadow-2xl shadow-purple-500/30 animate-scaleIn my-auto max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-6">
+      <div
+        className={`bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md border-2 border-${themeColor.primary}/50 rounded-3xl p-6 max-w-lg w-full shadow-2xl shadow-${themeColor.glow} animate-scaleIn my-auto max-h-[90vh] overflow-y-auto`}
+      >
+        <h2
+          className={`text-xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-${themeColor.primary} to-${themeColor.secondary} mb-6`}
+        >
           Let&apos;s start hunting
         </h2>
 
@@ -44,18 +45,29 @@ export const QuizModal = ({
           )} rounded-2xl p-6 mb-6 bg-slate-800/60 shadow-xl`}
         >
           <div className="flex items-center justify-center mb-4">
-            {rawImage ? (
-              <div className="relative w-28 h-36 rounded-2xl overflow-hidden border-2 border-purple-500/40 shadow-lg shadow-purple-500/30 bg-slate-800/80 flex items-center justify-center">
-                {isLikelyImageAsset ? (
+            {hasContent ? (
+              <div
+                className={`relative w-28 h-36 rounded-2xl overflow-hidden border-2 border-${themeColor.primary}/40 shadow-lg shadow-${themeColor.glow} bg-slate-800/80 flex items-center justify-center`}
+              >
+                {imageSrc ? (
                   <img
                     src={imageSrc}
                     alt={character.name}
                     className="w-full h-full object-cover"
                     draggable={false}
+                    onError={(e) => {
+                      // Fallback if image fails to load
+                      e.currentTarget.style.display = 'none';
+                      const textSpan = e.currentTarget.nextElementSibling;
+                      if (textSpan && textSpan.classList.contains('fallback-text')) {
+                        textSpan.classList.remove('hidden');
+                      }
+                    }}
                   />
-                ) : (
-                  <span className="text-5xl" aria-hidden="true">
-                    {rawImage}
+                ) : null}
+                {displayAsText && (
+                  <span className={`text-5xl ${imageSrc ? 'hidden fallback-text' : ''}`} aria-hidden="true">
+                    {character.image?.trim()}
                   </span>
                 )}
                 <div
@@ -67,7 +79,9 @@ export const QuizModal = ({
                 </div>
               </div>
             ) : (
-              <div className="relative w-28 h-36 rounded-2xl border-2 border-dashed border-purple-500/40 bg-slate-800/60 flex items-center justify-center text-purple-300 text-xs text-center px-4">
+              <div
+                className={`relative w-28 h-36 rounded-2xl border-2 border-dashed border-${themeColor.primary}/40 bg-slate-800/60 flex items-center justify-center text-${themeColor.primary} text-xs text-center px-4`}
+              >
                 Card art coming soon
                 <div
                   className={`absolute -top-2 -right-2 px-3 py-1 rounded-full bg-gradient-to-r ${getTierColor(
@@ -80,7 +94,9 @@ export const QuizModal = ({
             )}
           </div>
 
-          <h3 className="text-lg font-semibold text-purple-300 mb-4 text-center">
+          <h3
+            className={`text-lg font-semibold text-${themeColor.primary} mb-4 text-center`}
+          >
             {character.question}
           </h3>
 
@@ -101,8 +117,8 @@ export const QuizModal = ({
                         ? "bg-green-600/30 border-green-500 text-green-300"
                         : isIncorrect
                         ? "bg-red-600/30 border-red-500 text-red-300"
-                        : "bg-purple-600/30 border-purple-500 text-purple-300"
-                      : "bg-slate-700/30 border-slate-600 text-slate-300 hover:border-purple-500/50 hover:bg-slate-700/50"
+                        : `bg-${themeColor.primary}/30 border-${themeColor.primary} text-${themeColor.primary}`
+                      : `bg-slate-700/30 border-slate-600 text-slate-300 hover:border-${themeColor.primary}/50 hover:bg-slate-700/50`
                   } ${
                     quizResult !== null
                       ? "cursor-not-allowed"
@@ -124,7 +140,7 @@ export const QuizModal = ({
           className={`w-full py-3 rounded-xl font-bold transition-all duration-300 ${
             selectedAnswer === null || quizResult !== null
               ? "bg-slate-700 text-slate-500 cursor-not-allowed"
-              : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transform hover:scale-105"
+              : `bg-gradient-to-r from-${themeColor.primary} to-${themeColor.secondary} hover:from-${themeColor.primary} hover:to-${themeColor.secondary} text-white transform hover:scale-105`
           }`}
         >
           {quizResult === "correct"
