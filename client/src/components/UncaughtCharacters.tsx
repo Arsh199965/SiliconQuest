@@ -137,7 +137,7 @@ export default function UncaughtCharacters({
               {uncaughtCards.map((card) => {
                 const imageSrc = getImageSrc(card.image);
                 const displayAsText = shouldDisplayAsText(card.image);
-                
+
                 return (
                   <div
                     key={card.id}
@@ -155,10 +155,10 @@ export default function UncaughtCharacters({
                             className="w-full h-full object-cover"
                             draggable={false}
                             onError={(e) => {
-                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.style.display = "none";
                               const parent = e.currentTarget.parentElement;
                               if (parent) {
-                                parent.innerHTML = displayAsText 
+                                parent.innerHTML = displayAsText
                                   ? `<span class="text-4xl">${card.image?.trim()}</span>`
                                   : '<span class="text-4xl">❓</span>';
                               }
@@ -171,21 +171,21 @@ export default function UncaughtCharacters({
                         )}
                       </div>
 
-                    {/* Character Name */}
-                    <h3 className="text-sm font-semibold text-purple-300 mb-2 truncate w-full">
-                      {card.name}
-                    </h3>
+                      {/* Character Name */}
+                      <h3 className="text-sm font-semibold text-purple-300 mb-2 truncate w-full">
+                        {card.name}
+                      </h3>
 
-                    {/* Tier Badge */}
-                    {card.tier && (
-                      <div
-                        className={`px-3 py-1 rounded-full bg-gradient-to-r ${getTierColor(
-                          card.tier
-                        )} text-white text-xs font-bold mb-2`}
-                      >
-                        {card.tier}
-                      </div>
-                    )}
+                      {/* Tier Badge */}
+                      {card.tier && (
+                        <div
+                          className={`px-3 py-1 rounded-full bg-gradient-to-r ${getTierColor(
+                            card.tier
+                          )} text-white text-xs font-bold mb-2`}
+                        >
+                          {card.tier}
+                        </div>
+                      )}
 
                       {/* Value */}
                       <div className="text-amber-400 font-bold text-sm">

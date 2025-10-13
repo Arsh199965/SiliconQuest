@@ -202,7 +202,11 @@ export default function Home() {
           <main className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-sm border border-purple-500/20 rounded-3xl p-6 shadow-2xl shadow-purple-500/20">
             {/* Title & Change Team */}
             <div className="flex items-center justify-between mb-6">
-              <h1 className={`flex-1 ${selectedTeam ? "text-left" : "text-center"} text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 tracking-tight`}>
+              <h1
+                className={`flex-1 ${
+                  selectedTeam ? "text-left" : "text-center"
+                } text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 tracking-tight`}
+              >
                 {selectedTeam ? "Hunt is On!!" : "Let's start hunting"}
               </h1>
               {selectedTeam && (
@@ -320,8 +324,10 @@ export default function Home() {
                       >
                         {charactersCaught.map((character) => {
                           const imageSrc = getImageSrc(character.image);
-                          const displayAsText = shouldDisplayAsText(character.image);
-                          
+                          const displayAsText = shouldDisplayAsText(
+                            character.image
+                          );
+
                           return (
                             <div
                               key={character.id}
@@ -336,7 +342,7 @@ export default function Home() {
                                     className="w-full h-full object-cover"
                                     draggable={false}
                                     onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
+                                      e.currentTarget.style.display = "none";
                                     }}
                                   />
                                 ) : (
