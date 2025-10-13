@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { catchCharacter } from "@/services/firestore";
 import { useARCharacters } from "./ar-camera/hooks/useARCharacters";
@@ -20,6 +20,7 @@ import {
   Character,
   getTierFromValue,
   MindARSceneElement,
+  Tier,
 } from "./ar-camera/types";
 
 export default function ARCamera({
@@ -29,7 +30,7 @@ export default function ARCamera({
   onCharacterCollected,
 }: ARCameraProps) {
   const {
-    characters,
+    charactersByTier,
     loading: loadingCharacters,
     error: charactersError,
     refetch,
@@ -45,7 +46,7 @@ export default function ARCamera({
       }
     >
   >({});
-  const charactersRef = useRef<Character[]>([]);
+  const charactersMapRef = useRef<Map<string, Character>>(new Map());
   const [detectedCharacter, setDetectedCharacter] = useState<Character | null>(
     null
   );
@@ -56,64 +57,47 @@ export default function ARCamera({
   );
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [isCatching, setIsCatching] = useState(false);
-  const [activeMindFile, setActiveMindFile] = useState<string | null>(null);
+  const [selectedTier, setSelectedTier] = useState<Tier>("Common");
   const showQuizRef = useRef(false);
-  const activeTargetRef = useRef<string | null>(null);
+  const activeTargetRef = useRef<{
+    characterId: string;
+    targetIndex: number;
+  } | null>(null);
 
   const { scriptsLoaded, animationMixerAvailable, arError, setARError } =
     useMindARScripts();
 
   useMindARInlineStyles(scriptsLoaded);
 
+  // Update character map whenever tier data changes
+  useEffect(() => {
+    const newMap = new Map<string, Character>();
+    Object.values(charactersByTier)
+      .flat()
+      .forEach((char) => {
+        newMap.set(char.id, char);
+      });
+    charactersMapRef.current = newMap;
+  }, [charactersByTier]);
+
   // Show error if characters failed to load or have missing fields
   useEffect(() => {
     if (charactersError) {
       setARError(charactersError);
-    } else if (!loadingCharacters && characters.length === 0) {
-      setARError(
-        "No AR characters configured. Please add required fields to Firestore documents. " +
-          "See FIRESTORE_SCHEMA.md for details."
-      );
+    } else if (!loadingCharacters) {
+      const totalCharacters = Object.values(charactersByTier).flat().length;
+      if (totalCharacters === 0) {
+        setARError(
+          "No AR characters configured. Please add required fields to Firestore documents. " +
+            "See FIRESTORE_SCHEMA.md for details."
+        );
+      }
     }
-  }, [charactersError, loadingCharacters, characters, setARError]);
+  }, [charactersError, loadingCharacters, charactersByTier, setARError]);
 
   useEffect(() => {
     showQuizRef.current = showQuiz;
   }, [showQuiz]);
-
-  useEffect(() => {
-    charactersRef.current = characters;
-  }, [characters]);
-
-  const mindFileGroups = useMemo(() => {
-    const map = new Map<string, Character[]>();
-    characters.forEach((character) => {
-      if (!map.has(character.mindFile)) {
-        map.set(character.mindFile, []);
-      }
-      map.get(character.mindFile)?.push(character);
-    });
-    return Array.from(map.entries()).map(([mindFile, list]) => ({
-      mindFile,
-      characters: list,
-      label:
-        list
-          .map((character) => character.name)
-          .filter(Boolean)
-          .join(", ") || mindFile,
-    }));
-  }, [characters]);
-
-  useEffect(() => {
-    if (mindFileGroups.length === 0) {
-      setActiveMindFile(null);
-      return;
-    }
-
-    if (!activeMindFile || !mindFileGroups.some(({ mindFile }) => mindFile === activeMindFile)) {
-      setActiveMindFile(mindFileGroups[0].mindFile);
-    }
-  }, [mindFileGroups, activeMindFile]);
 
   const stopMindAR = useCallback(() => {
     const sceneEl = sceneRef.current;
@@ -131,16 +115,15 @@ export default function ARCamera({
 
   useEffect(() => stopMindAR, [stopMindAR]);
 
+  // Reset detection state when tier changes
   useEffect(() => {
     activeTargetRef.current = null;
     setDetectedCharacter(null);
     setShowQuiz(false);
     setSelectedAnswer(null);
     setQuizResult(null);
-    if (activeMindFile) {
-      stopMindAR();
-    }
-  }, [activeMindFile, stopMindAR]);
+    stopMindAR();
+  }, [selectedTier, stopMindAR]);
 
   const handleSceneReady = useCallback(() => {
     setIsSceneReady(true);
@@ -161,48 +144,62 @@ export default function ARCamera({
     handleSceneError
   );
 
-  const registerTargetRef = useCallback((id: string) => {
-    return (el: Element | null) => {
-      const existingListeners = targetListenersRef.current[id];
-      const existingElement = targetRefs.current[id];
+  const registerTargetRef = useCallback(
+    (characterId: string, targetIndex: number) => {
+      return (el: Element | null) => {
+        const key = `${characterId}-${targetIndex}`;
+        const existingListeners = targetListenersRef.current[key];
+        const existingElement = targetRefs.current[key];
 
-      if (existingListeners && existingElement) {
-        existingElement.removeEventListener("targetFound", existingListeners.onFound);
-        existingElement.removeEventListener("targetLost", existingListeners.onLost);
-        delete targetListenersRef.current[id];
-      }
+        if (existingListeners && existingElement) {
+          existingElement.removeEventListener(
+            "targetFound",
+            existingListeners.onFound
+          );
+          existingElement.removeEventListener(
+            "targetLost",
+            existingListeners.onLost
+          );
+          delete targetListenersRef.current[key];
+        }
 
-      if (el) {
-        targetRefs.current[id] = el;
+        if (el) {
+          targetRefs.current[key] = el;
 
-        const onFound = () => {
-          const character = charactersRef.current.find((c) => c.id === id);
-          if (!character) return;
+          const onFound = () => {
+            const character = charactersMapRef.current.get(characterId);
+            if (!character) return;
 
-          activeTargetRef.current = character.id;
-          setDetectedCharacter(character);
-          setShowQuiz(false);
-          setSelectedAnswer(null);
-          setQuizResult(null);
-        };
+            activeTargetRef.current = { characterId, targetIndex };
+            setDetectedCharacter(character);
+            setShowQuiz(false);
+            setSelectedAnswer(null);
+            setQuizResult(null);
+          };
 
-        const onLost = () => {
-          if (activeTargetRef.current === id && !showQuizRef.current) {
-            activeTargetRef.current = null;
-            setDetectedCharacter((current) =>
-              current?.id === id ? null : current
-            );
-          }
-        };
+          const onLost = () => {
+            if (
+              activeTargetRef.current?.characterId === characterId &&
+              activeTargetRef.current?.targetIndex === targetIndex &&
+              !showQuizRef.current
+            ) {
+              activeTargetRef.current = null;
+              setDetectedCharacter((current) =>
+                current?.id === characterId ? null : current
+              );
+            }
+          };
 
-        el.addEventListener("targetFound", onFound);
-        el.addEventListener("targetLost", onLost);
-        targetListenersRef.current[id] = { onFound, onLost };
-      } else {
-        delete targetRefs.current[id];
-      }
-    };
-  }, []);
+          el.addEventListener("targetFound", onFound);
+          el.addEventListener("targetLost", onLost);
+          targetListenersRef.current[key] = { onFound, onLost };
+        } else {
+          delete targetRefs.current[key];
+        }
+      };
+    },
+    []
+  );
 
   useEffect(() => {
     return () => {
@@ -291,6 +288,8 @@ export default function ARCamera({
     onClose();
   }, [onClose, stopMindAR]);
 
+  const currentTierCharacters = charactersByTier[selectedTier];
+
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       <div className="relative flex-1 overflow-hidden">
@@ -303,15 +302,15 @@ export default function ARCamera({
         {scriptsLoaded &&
           !arError &&
           !loadingCharacters &&
-          characters.length > 0 && (
+          currentTierCharacters.length > 0 && (
             <div className="absolute inset-0">
               <MindARScene
-                key={activeMindFile ?? "default"}
+                key={selectedTier}
                 sceneRef={sceneRef}
-                characters={characters}
+                characters={currentTierCharacters}
                 animationMixerAvailable={animationMixerAvailable}
                 registerTargetRef={registerTargetRef}
-                activeMindFile={activeMindFile}
+                selectedTier={selectedTier}
               />
             </div>
           )}
@@ -319,12 +318,13 @@ export default function ARCamera({
         <HeaderOverlay
           teamName={teamName}
           onClose={handleClose}
-          mindFiles={mindFileGroups.map(({ mindFile, label }) => ({
-            value: mindFile,
-            label,
-          }))}
-          activeMindFile={activeMindFile}
-          onMindFileChange={setActiveMindFile}
+          mindFiles={[
+            { value: "Common", label: "Common" },
+            { value: "Rare", label: "Rare" },
+            { value: "Legendary", label: "Legendary" },
+          ]}
+          activeMindFile={selectedTier}
+          onMindFileChange={(tier) => setSelectedTier(tier as Tier)}
         />
         <FrameOverlay />
         <ScanHint visible={!detectedCharacter && isSceneReady && !showQuiz} />

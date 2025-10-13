@@ -16,16 +16,21 @@ import { db } from './firebase';
  * Uses a transaction to ensure atomicity of the counter increment.
  * 
  * @param collectionName - The name of the collection ('cards' or 'teams')
- * @param prefix - The prefix to use for the ID ('char_' or 'team_')
- * @returns A formatted ID string (e.g., 'char_001' or 'team_042')
+ * @param prefix - The prefix to use for the ID ('char_', 'team_', 'c1', 'c2', 'c3')
+ * @returns A formatted ID string (e.g., 'char_001', 'team_042', 'c101', 'c201', 'c301')
  * @throws Error if counter document doesn't exist or transaction fails
  */
 export async function generateNextId(
   collectionName: 'cards' | 'teams',
-  prefix: 'char_' | 'team_'
+  prefix: 'char_' | 'team_' | 'c1' | 'c2' | 'c3'
 ): Promise<string> {
+  // Map tier prefixes to their counter suffix
+  const counterSuffix = prefix === 'c1' ? 'Legendary' : 
+                       prefix === 'c2' ? 'Rare' : 
+                       prefix === 'c3' ? 'Common' : '';
+  
   // Get reference to the counter document
-  const counterRef = doc(db, 'counters', `${collectionName}Counter`);
+  const counterRef = doc(db, 'counters', counterSuffix ? `${collectionName}${counterSuffix}Counter` : `${collectionName}Counter`);
   
   try {
     // Run the counter increment in a transaction
@@ -65,11 +70,11 @@ export async function generateNextId(
  * Helper function to validate if a given ID follows the expected format
  * 
  * @param id - The ID to validate
- * @param prefix - The expected prefix ('char_' or 'team_')
+ * @param prefix - The expected prefix ('char_', 'team_', 'c1', 'c2', 'c3')
  * @returns boolean indicating if the ID is valid
  */
-export function isValidId(id: string, prefix: 'char_' | 'team_'): boolean {
-  const pattern = new RegExp(`^${prefix}\\d{3}$`);
+export function isValidId(id: string, prefix: 'char_' | 'team_' | 'c1' | 'c2' | 'c3'): boolean {
+  const pattern = new RegExp(`^${prefix}\\d{2,3}$`);
   return pattern.test(id);
 }
 
