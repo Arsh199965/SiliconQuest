@@ -12,7 +12,7 @@ interface UseARCharactersResult {
 
 const loggedMissingCharacterIds = new Set<string>();
 
-const validateCharacter = (char: any): char is Character => {
+const validateCharacter = (char: unknown): char is Character => {
   if (!char || typeof char !== "object") {
     return false;
   }
@@ -37,11 +37,12 @@ const validateCharacter = (char: any): char is Character => {
   });
 
   if (missingFields.length > 0) {
-    const identifier = String(char.id ?? char.name ?? JSON.stringify(char));
+    const charObj = char as Record<string, unknown>;
+    const identifier = String(charObj.id ?? charObj.name ?? JSON.stringify(char));
     if (!loggedMissingCharacterIds.has(identifier)) {
       loggedMissingCharacterIds.add(identifier);
       console.warn(
-        `Character ${char.name || char.id || "(unknown)"} is missing required fields:`,
+        `Character ${charObj.name || charObj.id || "(unknown)"} is missing required fields:`,
         missingFields.join(", ")
       );
     }

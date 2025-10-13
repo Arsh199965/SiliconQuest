@@ -117,7 +117,7 @@ export default function Home() {
     setIsARActive(false);
   };
 
-  const handleCharacterCollected = (_character: CaughtCharacter) => {
+  const handleCharacterCollected = () => {
     if (selectedTeamId) {
       fetchCaughtCharacters(selectedTeamId);
     }
@@ -334,15 +334,16 @@ export default function Home() {
                               className="flex-shrink-0 w-24 bg-gradient-to-br from-slate-700/50 to-slate-800/50 border-2 border-purple-500/40 rounded-xl flex flex-col hover:border-purple-400 transition-all duration-300 hover:scale-105 cursor-pointer"
                             >
                               {/* Image/Emoji Container - Fixed height */}
-                              <div className="h-24 w-full overflow-hidden rounded-t-xl">
+                              <div className="h-20 w-full overflow-hidden rounded-t-xl">
                                 {imageSrc ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
                                   <img
                                     src={imageSrc}
                                     alt={character.name}
                                     className="w-full h-full object-cover"
                                     draggable={false}
                                     onError={(e) => {
-                                      e.currentTarget.style.display = "none";
+                                      e.currentTarget.style.display = 'none';
                                     }}
                                   />
                                 ) : (

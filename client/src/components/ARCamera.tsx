@@ -259,7 +259,7 @@ export default function ARCamera({
         }
       };
     },
-    []
+    [clearCooldownTimer, startCooldownTimer]
   );
 
   useEffect(() => {
