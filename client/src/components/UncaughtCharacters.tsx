@@ -20,12 +20,6 @@ export default function UncaughtCharacters({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchUncaughtCards();
-    }
-  }, [isOpen]);
-
   const fetchUncaughtCards = async () => {
     try {
       setLoading(true);
@@ -40,6 +34,12 @@ export default function UncaughtCharacters({
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchUncaughtCards();
+    }
+  }, [isOpen]); // fetchUncaughtCards is stable, no need to include it
 
   const getTierColor = (tier?: string) => {
     switch (tier) {
@@ -149,6 +149,7 @@ export default function UncaughtCharacters({
                       {/* Character Image/Emoji */}
                       <div className="w-20 h-20 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl flex items-center justify-center mb-3 border border-purple-500/30 overflow-hidden">
                         {imageSrc ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={imageSrc}
                             alt={card.name}

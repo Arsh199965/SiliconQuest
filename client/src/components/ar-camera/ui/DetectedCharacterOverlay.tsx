@@ -34,6 +34,7 @@ export const DetectedCharacterOverlay = ({
               className={`relative w-48 h-64 rounded-2xl overflow-hidden border-2 border-${themeColor.primary}/40 shadow-lg shadow-${themeColor.glow} bg-slate-800/80 flex items-center justify-center`}
             >
               {imageSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={imageSrc}
                   alt={character.name}

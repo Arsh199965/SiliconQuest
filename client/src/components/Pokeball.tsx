@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 interface PokeballProps {
   onClick: () => void;
   isExploding: boolean;
