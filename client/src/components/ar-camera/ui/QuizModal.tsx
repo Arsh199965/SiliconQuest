@@ -23,7 +23,7 @@ export const QuizModal = ({
 }: QuizModalProps) => {
   const tier = character.tier || getTierFromValue(character.value);
   const themeColor = getTierThemeColor(tier);
-  
+
   const imageSrc = getImageSrc(character.image);
   const displayAsText = shouldDisplayAsText(character.image);
   const hasContent = imageSrc || displayAsText;
@@ -57,16 +57,24 @@ export const QuizModal = ({
                     draggable={false}
                     onError={(e) => {
                       // Fallback if image fails to load
-                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.style.display = "none";
                       const textSpan = e.currentTarget.nextElementSibling;
-                      if (textSpan && textSpan.classList.contains('fallback-text')) {
-                        textSpan.classList.remove('hidden');
+                      if (
+                        textSpan &&
+                        textSpan.classList.contains("fallback-text")
+                      ) {
+                        textSpan.classList.remove("hidden");
                       }
                     }}
                   />
                 ) : null}
                 {displayAsText && (
-                  <span className={`text-5xl ${imageSrc ? 'hidden fallback-text' : ''}`} aria-hidden="true">
+                  <span
+                    className={`text-5xl ${
+                      imageSrc ? "hidden fallback-text" : ""
+                    }`}
+                    aria-hidden="true"
+                  >
                     {character.image?.trim()}
                   </span>
                 )}
