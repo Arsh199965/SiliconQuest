@@ -69,3 +69,16 @@ export const getTierThemeColor = (tier: string) => {
       };
   }
 };
+
+export const getTierButtonGradient = (tier: string): string => {
+  switch (tier) {
+    case "Legendary":
+      return "bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600";
+    case "Rare":
+      return "bg-gradient-to-r from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500";
+    case "Common":
+      return "bg-gradient-to-r from-purple-400 to-purple-500 hover:from-purple-500 hover:to-purple-600";
+    default:
+      return "bg-gradient-to-r from-purple-400 to-purple-500 hover:from-purple-500 hover:to-purple-600";
+  }
+};
