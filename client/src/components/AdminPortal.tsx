@@ -459,14 +459,20 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <span
                                       className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                        ('value' in card && (card as { value?: number }).value) === 50
+                                        ("value" in card &&
+                                          (card as { value?: number })
+                                            .value) === 50
                                           ? "bg-purple-900/50 text-purple-300"
-                                          : ('value' in card && (card as { value?: number }).value) === 20
+                                          : ("value" in card &&
+                                              (card as { value?: number })
+                                                .value) === 20
                                           ? "bg-blue-900/50 text-blue-300"
                                           : "bg-gray-700/50 text-gray-300"
                                       }`}
                                     >
-                                      {('value' in card && (card as { value?: number }).value) || "N/A"}
+                                      {("value" in card &&
+                                        (card as { value?: number }).value) ||
+                                        "N/A"}
                                     </span>
                                   </td>
                                   <td className="px-6 py-4 text-gray-300">

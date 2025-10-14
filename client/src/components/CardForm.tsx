@@ -48,7 +48,10 @@ export default function CardForm({
         image: cardToEdit.image,
         mindFile: cardToEdit.mindFile,
         modelUrl: cardToEdit.modelUrl,
-        value: ('value' in cardToEdit && typeof cardToEdit.value === 'number') ? cardToEdit.value : 50,
+        value:
+          "value" in cardToEdit && typeof cardToEdit.value === "number"
+            ? cardToEdit.value
+            : 50,
       });
     } else {
       setFormData({

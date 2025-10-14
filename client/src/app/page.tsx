@@ -343,7 +343,7 @@ export default function Home() {
                                     className="w-full h-full object-cover"
                                     draggable={false}
                                     onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
+                                      e.currentTarget.style.display = "none";
                                     }}
                                   />
                                 ) : (

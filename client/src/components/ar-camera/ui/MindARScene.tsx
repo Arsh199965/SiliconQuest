@@ -73,38 +73,32 @@ export const MindARScene = ({
             ref: registerTargetRef(character.id, index),
             "mindar-image-target": `targetIndex: ${index}`,
           },
-          character.modelUrl
-            ? createElement("a-gltf-model", {
-                src: `#character-model-${character.id}`,
-                position: "0 -0.25 0",
-                rotation: "0 180 0",
-                scale: "0.6 0.6 0.6",
-                ...(animationMixerAvailable ? { "animation-mixer": "" } : {}),
-              })
-            : createElement("a-gltf-model", {
+          character.id.startsWith("c1") &&
+            createElement("a-gltf-model", {
               src: "/takopi.glb", // Using an absolute path from the public folder root
               position: "0 0 0",
               rotation: "60 0 0",
               scale: "1 1 1",
-              "animation-mixer": "clip: pm0149_00_00_20001_battlewait01_loop; loop: repeat",
+              "animation-mixer":
+                "clip: pm0149_00_00_20001_battlewait01_loop; loop: repeat",
             })
-            // : createElement(
-            //     "a-plane",
-            //     {
-            //       position: "0 0 0",
-            //       rotation: "0 0 0",
-            //       height: "0.8",
-            //       width: "0.8",
-            //       color: TIER_CONFIG[selectedTier].color,
-            //     },
-            //     createElement("a-text", {
-            //       value: character.name,
-            //       position: "0 0 0.1",
-            //       align: "center",
-            //       width: "1.5",
-            //       color: "#ffffff",
-            //     })
-            //   )
+          // : createElement(
+          //     "a-plane",
+          //     {
+          //       position: "0 0 0",
+          //       rotation: "0 0 0",
+          //       height: "0.8",
+          //       width: "0.8",
+          //       color: TIER_CONFIG[selectedTier].color,
+          //     },
+          //     createElement("a-text", {
+          //       value: character.name,
+          //       position: "0 0 0.1",
+          //       align: "center",
+          //       width: "1.5",
+          //       color: "#ffffff",
+          //     })
+          //   )
         )
       )
   );

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { formatCooldownTime } from "@/utils/quizCooldown";
 import { getImageSrc, shouldDisplayAsText } from "@/utils/imageUtils";
 import { Character, getTierFromValue } from "../types";
@@ -18,15 +19,61 @@ export const DetectedCharacterOverlay = ({
 }: DetectedCharacterOverlayProps) => {
   const tier = character.tier || getTierFromValue(character.value);
   const themeColor = getTierThemeColor(tier);
+  const isLegendary = tier === "Legendary";
+
+  const [isExpanded, setIsExpanded] = useState(!isLegendary);
+
+  // Auto-expand legendary cards after 5 seconds
+  useEffect(() => {
+    if (isLegendary) {
+      const timer = setTimeout(() => {
+        setIsExpanded(true);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isLegendary]);
 
   const imageSrc = getImageSrc(character.image);
   const displayAsText = shouldDisplayAsText(character.image);
   const hasContent = imageSrc || displayAsText;
 
+  // Compact view for legendary characters (first 5 seconds)
+  if (isLegendary && !isExpanded) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center p-4 z-40">
+        <div
+          className={`bg-slate-900/95 backdrop-blur-md border-2 border-${themeColor.primary}/70 rounded-2xl px-8 py-4 shadow-2xl shadow-${themeColor.glow} animate-scaleIn transition-all duration-500`}
+        >
+          <button
+            onClick={onCollect}
+            disabled={
+              isCaught || (cooldownSeconds !== null && cooldownSeconds > 0)
+            }
+            className={`py-3 px-8 font-bold rounded-xl transition-all duration-300 ${
+              isCaught || (cooldownSeconds !== null && cooldownSeconds > 0)
+                ? "bg-slate-700 text-slate-500 cursor-not-allowed"
+                : `bg-gradient-to-r from-${themeColor.primary} to-${themeColor.secondary} hover:from-${themeColor.primary} hover:to-${themeColor.secondary} text-white transform hover:scale-105`
+            }`}
+          >
+            {isCaught
+              ? "Already Caught"
+              : cooldownSeconds && cooldownSeconds > 0
+              ? `Cooldown: ${formatCooldownTime(cooldownSeconds)}`
+              : "Collect Character"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Full view (for Common/Rare always, and Legendary after 5 seconds)
   return (
     <div className="absolute inset-0 flex items-center justify-center p-4 z-40">
       <div
-        className={`bg-slate-900/95 backdrop-blur-md border-2 border-${themeColor.primary}/70 rounded-3xl p-6 max-w-sm w-full shadow-2xl shadow-${themeColor.glow} animate-scaleIn`}
+        className={`bg-slate-900/95 backdrop-blur-md border-2 border-${themeColor.primary}/70 rounded-3xl p-6 max-w-sm w-full shadow-2xl shadow-${themeColor.glow} ${
+          isLegendary ? "animate-expandIn" : "animate-scaleIn"
+        }`}
       >
         <div className="flex flex-col items-center gap-4">
           {hasContent ? (

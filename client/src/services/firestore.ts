@@ -8,7 +8,8 @@ import {
   orderBy,
   where,
   arrayUnion,
-  increment 
+  increment,
+  runTransaction
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Team, Card, Character } from '@/types';
@@ -170,26 +171,79 @@ export async function getARCharacters(): Promise<Character[]> {
   }
 }
 
+// Fetch a single character by ID (for real-time updates)
+export async function getCharacterById(characterId: string): Promise<Character | null> {
+  try {
+    const characterRef = doc(db, 'cards', characterId);
+    const characterSnap = await getDoc(characterRef);
+    
+    if (characterSnap.exists()) {
+      const data = characterSnap.data();
+      return {
+        id: characterSnap.id,
+        ...data,
+        tier: data.tier || getTierFromValue(data.value || 0),
+        mindFile: data.mindFile?.startsWith('/') 
+          ? data.mindFile 
+          : `/ar-targets/${data.mindFile}`,
+      } as Character;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error fetching character by ID:', error);
+    throw error;
+  }
+}
+
 // Catch a character (update character status + team data)
+// Uses Firestore transaction to prevent race conditions when multiple teams try to catch the same character
 export async function catchCharacter(
   characterId: string, 
   teamId: string, 
   characterValue: number
-): Promise<void> {
+): Promise<{ success: boolean; alreadyCaught?: boolean; caughtByTeam?: string }> {
   try {
-    // Update character document
     const characterRef = doc(db, 'cards', characterId);
-    await updateDoc(characterRef, {
-      isCaught: true,
-      caughtByTeam: teamId
+    const teamRef = doc(db, 'teams', teamId);
+
+    // Use transaction to ensure atomic read-check-write operation
+    const result = await runTransaction(db, async (transaction) => {
+      // Read the current state of the character
+      const characterDoc = await transaction.get(characterRef);
+      
+      if (!characterDoc.exists()) {
+        throw new Error('Character does not exist');
+      }
+
+      const characterData = characterDoc.data();
+      
+      // Check if already caught (race condition check)
+      if (characterData.isCaught === true) {
+        return {
+          success: false,
+          alreadyCaught: true,
+          caughtByTeam: characterData.caughtByTeam
+        };
+      }
+
+      // If not caught, proceed with catching
+      // Update character document
+      transaction.update(characterRef, {
+        isCaught: true,
+        caughtByTeam: teamId
+      });
+
+      // Update team document
+      transaction.update(teamRef, {
+        cardsCaught: arrayUnion(characterId),
+        score: increment(characterValue)
+      });
+
+      return { success: true };
     });
 
-    // Update team document
-    const teamRef = doc(db, 'teams', teamId);
-    await updateDoc(teamRef, {
-      cardsCaught: arrayUnion(characterId),
-      score: increment(characterValue)
-    });
+    return result;
   } catch (error) {
     console.error('Error catching character:', error);
     throw error;
