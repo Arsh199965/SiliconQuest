@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getUncaughtCards } from "@/services/firestore";
 import { getImageSrc, shouldDisplayAsText } from "@/utils/imageUtils";
 import type { Card } from "@/types";
@@ -20,7 +20,7 @@ export default function UncaughtCharacters({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUncaughtCards = async () => {
+  const fetchUncaughtCards = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -33,13 +33,13 @@ export default function UncaughtCharacters({
     } finally {
       setLoading(false);
     }
-  };
+  }, [onCountChange]);
 
   useEffect(() => {
     if (isOpen) {
       fetchUncaughtCards();
     }
-  }, [isOpen]); // fetchUncaughtCards is stable, no need to include it
+  }, [isOpen, fetchUncaughtCards]);
 
   const getTierColor = (tier?: string) => {
     switch (tier) {

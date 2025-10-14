@@ -16,7 +16,7 @@ interface MindARSceneProps {
 export const MindARScene = ({
   sceneRef,
   characters,
-  animationMixerAvailable,
+  // animationMixerAvailable, // Currently unused but kept for future animation features
   registerTargetRef,
   selectedTier,
 }: MindARSceneProps) => {
@@ -24,9 +24,6 @@ export const MindARScene = ({
   const targetSrc = useMemo(() => {
     return `/ar-targets/${TIER_CONFIG[selectedTier].mindFile}`;
   }, [selectedTier]);
-  characters.forEach((character) => {
-    console.log(character.modelUrl);
-  });
   return createElement(
     "a-scene",
     {
@@ -41,17 +38,20 @@ export const MindARScene = ({
       embedded: true,
       className: "mindar-scene w-[100vw] h-[100vh]",
     },
+
     createElement(
       "a-assets",
       null,
       characters
         .filter((character) => !!character.modelUrl)
-        .map((character) =>
-          createElement("a-asset-item", {
-            key: `asset-${character.id}`,
-            id: `character-model-${character.id}`,
-            src: character.modelUrl,
-          })
+        .map(
+          (character) =>
+            character.modelUrl &&
+            createElement("a-asset-item", {
+              key: `asset-${character.id}`,
+              id: `character-model-${character.id}`,
+              src: character.modelUrl,
+            })
         )
     ),
     // here - a-camera element renders the AR camera view
@@ -66,7 +66,7 @@ export const MindARScene = ({
       position: "0 1 0",
     }),
     // Render a target entity for each character in the selected tier
-    
+
     characters.length > 0 &&
       characters.map((character, index) =>
         createElement(

@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { formatCooldownTime } from "@/utils/quizCooldown";
 import { getImageSrc, shouldDisplayAsText } from "@/utils/imageUtils";
 import { Character, getTierFromValue } from "../types";
-import { getTierColor, getTierThemeColor } from "../utils/tierStyles";
+import {
+  getTierColor,
+  getTierThemeColor,
+  getTierButtonGradient,
+} from "../utils/tierStyles";
 
 interface DetectedCharacterOverlayProps {
   character: Character;
@@ -77,10 +81,10 @@ export const DetectedCharacterOverlay = ({
             disabled={
               isCaught || (cooldownSeconds !== null && cooldownSeconds > 0)
             }
-            className={`py-3 px-8 font-bold rounded-xl transition-all duration-300 ${
+            className={`py-3 px-8 font-bold rounded-xl transition-all duration-300 transform hover:scale-105 ${
               isCaught || (cooldownSeconds !== null && cooldownSeconds > 0)
                 ? "bg-slate-700 text-slate-500 cursor-not-allowed"
-                : `bg-gradient-to-r from-${themeColor.primary} to-${themeColor.secondary} hover:from-${themeColor.primary} hover:to-${themeColor.secondary} text-white transform hover:scale-105`
+                : `${getTierButtonGradient(tier)} text-white`
             }`}
           >
             {isCaught
@@ -123,7 +127,13 @@ export const DetectedCharacterOverlay = ({
             />
           </svg>
         </button>
-
+        <span
+          className={`absolute top-2.5 z-[100] left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r ${getTierColor(
+            tier
+          )} text-white text-xs font-bold shadow-lg`}
+        >
+          {tier}
+        </span>
         <div className="flex flex-col items-center gap-4">
           {hasContent ? (
             <div
@@ -159,13 +169,6 @@ export const DetectedCharacterOverlay = ({
                   {character.image?.trim()}
                 </span>
               )}
-              <span
-                className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r ${getTierColor(
-                  tier
-                )} text-white text-xs font-bold shadow-lg`}
-              >
-                {tier}
-              </span>
             </div>
           ) : (
             <div
@@ -213,10 +216,10 @@ export const DetectedCharacterOverlay = ({
           disabled={
             isCaught || (cooldownSeconds !== null && cooldownSeconds > 0)
           }
-          className={`mt-6 w-full py-3 font-bold rounded-xl transition-all duration-300 ${
+          className={`mt-6 w-full py-3 font-bold rounded-xl transition-all duration-300 transform hover:scale-105 ${
             isCaught || (cooldownSeconds !== null && cooldownSeconds > 0)
               ? "bg-slate-700 text-slate-500 cursor-not-allowed"
-              : `bg-gradient-to-r from-${themeColor.primary} to-${themeColor.secondary} hover:from-${themeColor.primary} hover:to-${themeColor.secondary} text-white transform hover:scale-105`
+              : `${getTierButtonGradient(tier)} text-white`
           }`}
         >
           {isCaught

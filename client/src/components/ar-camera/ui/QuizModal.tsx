@@ -34,6 +34,7 @@ export const QuizModal = ({
     <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md overflow-y-auto z-50">
       <div
         className={`relative bg-slate-900/30 backdrop-blur-xl border-2 border-${themeColor.primary}/50 rounded-xl p-6 max-w-lg w-full shadow-2xl shadow-${themeColor.glow} animate-scaleIn my-auto max-h-[90vh] overflow-y-auto`}
+        onContextMenu={(e) => e.preventDefault()} // Prevent right-click context menu
       >
         {/* Close button */}
         <button
@@ -69,6 +70,13 @@ export const QuizModal = ({
           )} rounded-2xl p-6 mb-6 bg-slate-800/60 shadow-xl`}
         >
           <div className="flex items-center justify-center mb-4">
+            <div
+              className={`absolute top-[8.25rem] z-[120] px-3 py-1 rounded-full bg-gradient-to-r ${getTierColor(
+                tier
+              )} text-white text-xs font-bold shadow-md`}
+            >
+              {tier}
+            </div>
             {hasContent ? (
               <div
                 className={`relative w-28 h-36 rounded-2xl overflow-hidden border-2 border-${themeColor.primary}/40 shadow-lg shadow-${themeColor.glow} bg-slate-800/80 flex items-center justify-center`}
@@ -103,13 +111,6 @@ export const QuizModal = ({
                     {character.image?.trim()}
                   </span>
                 )}
-                <div
-                  className={`absolute -top-2 -right-2 px-3 py-1 rounded-full bg-gradient-to-r ${getTierColor(
-                    tier
-                  )} text-white text-xs font-bold shadow-md`}
-                >
-                  {tier}
-                </div>
               </div>
             ) : (
               <div
@@ -128,12 +129,12 @@ export const QuizModal = ({
           </div>
 
           <h3
-            className={`text-md text-${themeColor.primary} mb-4 text-center`}
+            className={`text-md text-${themeColor.primary} mb-4 text-center select-none`}
           >
             {character.question}
           </h3>
 
-          <div className="space-y-3 text-sm">
+          <div className="space-y-3 text-sm select-none">
             {character.options.map((option, index) => {
               const isSelected = selectedAnswer === index;
               const isCorrect = quizResult === "correct" && isSelected;

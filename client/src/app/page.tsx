@@ -14,14 +14,6 @@ import {
 import { getImageSrc, shouldDisplayAsText } from "@/utils/imageUtils";
 import type { Team, Card } from "@/types";
 
-interface CaughtCharacter {
-  id: string;
-  name: string;
-  image?: string;
-  tier?: "Common" | "Rare" | "Legendary"; // Optional - calculated from value
-  value: number;
-}
-
 export default function Home() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);

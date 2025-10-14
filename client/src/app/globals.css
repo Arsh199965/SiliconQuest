@@ -28,6 +28,15 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Prevent text selection and copying */
+.select-none {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
