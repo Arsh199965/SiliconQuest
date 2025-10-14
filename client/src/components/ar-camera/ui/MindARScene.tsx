@@ -24,7 +24,9 @@ export const MindARScene = ({
   const targetSrc = useMemo(() => {
     return `/ar-targets/${TIER_CONFIG[selectedTier].mindFile}`;
   }, [selectedTier]);
-
+  characters.forEach((character) => {
+    console.log(character.modelUrl);
+  });
   return createElement(
     "a-scene",
     {
@@ -64,6 +66,7 @@ export const MindARScene = ({
       position: "0 1 0",
     }),
     // Render a target entity for each character in the selected tier
+    
     characters.length > 0 &&
       characters.map((character, index) =>
         createElement(
@@ -73,9 +76,9 @@ export const MindARScene = ({
             ref: registerTargetRef(character.id, index),
             "mindar-image-target": `targetIndex: ${index}`,
           },
-          character.id.startsWith("c1") &&
+          character.modelUrl &&
             createElement("a-gltf-model", {
-              src: "/takopi.glb", // Using an absolute path from the public folder root
+              src: `#character-model-${character.id}`, // Using the modelUrl from the character data
               position: "0 0 0",
               rotation: "60 0 0",
               scale: "1 1 1",

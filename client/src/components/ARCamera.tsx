@@ -311,30 +311,32 @@ export default function ARCamera({
 
         // Check if the character was already caught by another team
         if (!result.success && result.alreadyCaught) {
-          console.log(`Character already caught by team: ${result.caughtByTeam}`);
-          
+          console.log(
+            `Character already caught by team: ${result.caughtByTeam}`
+          );
+
           // Fetch the fresh character data from Firestore to get the updated caught status
           const freshCharacter = await getCharacterById(detectedCharacter.id);
-          console.log('Fresh character data:', freshCharacter);
-          
+          console.log("Fresh character data:", freshCharacter);
+
           if (freshCharacter) {
             // Update the detected character state with fresh data
             setDetectedCharacter(freshCharacter);
           }
-          
+
           // Reset quiz state
           setQuizResult(null);
           setIsCatching(false);
           setShowQuiz(false);
-          
+
           // Show error message after a brief delay to let the UI update
           setTimeout(() => {
             setARError(`This character was just caught by another team!`);
           }, 300);
-          
+
           // Also refresh the full character list
           refetch();
-          
+
           return;
         }
 
@@ -447,6 +449,11 @@ export default function ARCamera({
             quizResult={quizResult}
             onAnswerSelect={handleAnswerSelect}
             onSubmit={handleSubmitQuiz}
+            onClose={() => {
+              setShowQuiz(false);
+              setSelectedAnswer(null);
+              setQuizResult(null);
+            }}
           />
         )}
       </div>

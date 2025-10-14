@@ -267,3 +267,95 @@ export async function isCharacterCaught(characterId: string): Promise<boolean> {
     throw error;
   }
 }
+
+// Reset database: Mark all cards as uncaught and reset team scores
+export async function resetDatabase(): Promise<void> {
+  try {
+    // Reset all cards to uncaught
+    const cardsRef = collection(db, 'cards');
+    const cardsSnapshot = await getDocs(cardsRef);
+    
+    const cardUpdates = cardsSnapshot.docs.map(cardDoc => 
+      updateDoc(doc(db, 'cards', cardDoc.id), {
+        isCaught: false,
+        caughtByTeam: ''
+      })
+    );
+
+    // Reset all team scores to 0 and clear cardsCaught arrays
+    const teamsRef = collection(db, 'teams');
+    const teamsSnapshot = await getDocs(teamsRef);
+    
+    const teamUpdates = teamsSnapshot.docs.map(teamDoc => 
+      updateDoc(doc(db, 'teams', teamDoc.id), {
+        score: 0,
+        cardsCaught: []
+      })
+    );
+
+    // Execute all updates
+    await Promise.all([...cardUpdates, ...teamUpdates]);
+    
+    console.log('Database reset successfully');
+  } catch (error) {
+    console.error('Error resetting database:', error);
+    throw error;
+  }
+}
+
+// Create a snapshot of current database state for undo
+export async function createDatabaseSnapshot(): Promise<{
+  teams: Array<{ id: string; [key: string]: unknown }>;
+  cards: Array<{ id: string; [key: string]: unknown }>;
+}> {
+  try {
+    // Get all teams
+    const teamsRef = collection(db, 'teams');
+    const teamsSnapshot = await getDocs(teamsRef);
+    const teams = teamsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // Get all cards
+    const cardsRef = collection(db, 'cards');
+    const cardsSnapshot = await getDocs(cardsRef);
+    const cards = cardsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    return { teams, cards };
+  } catch (error) {
+    console.error('Error creating database snapshot:', error);
+    throw error;
+  }
+}
+
+// Restore database from snapshot
+export async function restoreDatabaseFromSnapshot(snapshot: {
+  teams: Array<{ id: string; [key: string]: unknown }>;
+  cards: Array<{ id: string; [key: string]: unknown }>;
+}): Promise<void> {
+  try {
+    // Restore all teams
+    const teamUpdates = snapshot.teams.map(team => {
+      const { id, ...data } = team;
+      return updateDoc(doc(db, 'teams', id), data);
+    });
+
+    // Restore all cards
+    const cardUpdates = snapshot.cards.map(card => {
+      const { id, ...data } = card;
+      return updateDoc(doc(db, 'cards', id), data);
+    });
+
+    // Execute all updates
+    await Promise.all([...teamUpdates, ...cardUpdates]);
+    
+    console.log('Database restored from snapshot successfully');
+  } catch (error) {
+    console.error('Error restoring database from snapshot:', error);
+    throw error;
+  }
+}

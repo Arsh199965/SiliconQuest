@@ -12,6 +12,7 @@ interface QuizModalProps {
   quizResult: "correct" | "incorrect" | null;
   onAnswerSelect: (index: number) => void;
   onSubmit: () => void;
+  onClose: () => void;
 }
 
 export const QuizModal = ({
@@ -20,6 +21,7 @@ export const QuizModal = ({
   quizResult,
   onAnswerSelect,
   onSubmit,
+  onClose,
 }: QuizModalProps) => {
   const tier = character.tier || getTierFromValue(character.value);
   const themeColor = getTierThemeColor(tier);
@@ -29,10 +31,32 @@ export const QuizModal = ({
   const hasContent = imageSrc || displayAsText;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto z-50">
+    <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md overflow-y-auto z-50">
       <div
-        className={`bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md border-2 border-${themeColor.primary}/50 rounded-3xl p-6 max-w-lg w-full shadow-2xl shadow-${themeColor.glow} animate-scaleIn my-auto max-h-[90vh] overflow-y-auto`}
+        className={`relative bg-slate-900/30 backdrop-blur-xl border-2 border-${themeColor.primary}/50 rounded-xl p-6 max-w-lg w-full shadow-2xl shadow-${themeColor.glow} animate-scaleIn my-auto max-h-[90vh] overflow-y-auto`}
       >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="sticky -top-3 -right-3 w-10 h-10 bg-slate-800 hover:bg-slate-700 text-white rounded-full flex items-center justify-center border-2 border-slate-600 transition-all duration-200 z-[100] shadow-lg"
+          aria-label="Close quiz"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+
         <h2
           className={`text-xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-${themeColor.primary} to-${themeColor.secondary} mb-6`}
         >
@@ -104,12 +128,12 @@ export const QuizModal = ({
           </div>
 
           <h3
-            className={`text-lg font-semibold text-${themeColor.primary} mb-4 text-center`}
+            className={`text-md text-${themeColor.primary} mb-4 text-center`}
           >
             {character.question}
           </h3>
 
-          <div className="space-y-3">
+          <div className="space-y-3 text-sm">
             {character.options.map((option, index) => {
               const isSelected = selectedAnswer === index;
               const isCorrect = quizResult === "correct" && isSelected;
