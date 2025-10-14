@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { catchCharacter } from "@/services/firestore";
+import { catchCharacter, getCharacterById } from "@/services/firestore";
 import {
   clearCooldown,
   getCooldownRemaining,
@@ -302,11 +302,43 @@ export default function ARCamera({
         clearCooldownTimer();
 
         // Update Firestore: mark character as caught and update team
-        await catchCharacter(
+        // This uses a transaction to prevent race conditions
+        const result = await catchCharacter(
           detectedCharacter.id,
           teamId,
           detectedCharacter.value
         );
+
+        // Check if the character was already caught by another team
+        if (!result.success && result.alreadyCaught) {
+          console.log(
+            `Character already caught by team: ${result.caughtByTeam}`
+          );
+
+          // Fetch the fresh character data from Firestore to get the updated caught status
+          const freshCharacter = await getCharacterById(detectedCharacter.id);
+          console.log("Fresh character data:", freshCharacter);
+
+          if (freshCharacter) {
+            // Update the detected character state with fresh data
+            setDetectedCharacter(freshCharacter);
+          }
+
+          // Reset quiz state
+          setQuizResult(null);
+          setIsCatching(false);
+          setShowQuiz(false);
+
+          // Show error message after a brief delay to let the UI update
+          setTimeout(() => {
+            setARError(`This character was just caught by another team!`);
+          }, 300);
+
+          // Also refresh the full character list
+          refetch();
+
+          return;
+        }
 
         // Notify parent component and close AR camera
         setTimeout(() => {
@@ -417,6 +449,11 @@ export default function ARCamera({
             quizResult={quizResult}
             onAnswerSelect={handleAnswerSelect}
             onSubmit={handleSubmitQuiz}
+            onClose={() => {
+              setShowQuiz(false);
+              setSelectedAnswer(null);
+              setQuizResult(null);
+            }}
           />
         )}
       </div>

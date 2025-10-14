@@ -33,6 +33,7 @@ export default function Home() {
   const [showUncaughtModal, setShowUncaughtModal] = useState(false);
   const [uncaughtCount, setUncaughtCount] = useState<number | null>(null);
   const [isLoadingUncaughtCount, setIsLoadingUncaughtCount] = useState(true);
+  const [teamSearchQuery, setTeamSearchQuery] = useState("");
 
   // Load teams from Firestore
   useEffect(() => {
@@ -132,9 +133,15 @@ export default function Home() {
     localStorage.removeItem("selectedTeamId");
     setCharactersCaught([]);
     setIsARActive(false);
+    setTeamSearchQuery(""); // Clear search when changing team
   };
 
   const selectedTeam = teams.find((t) => t.id === selectedTeamId);
+
+  // Filter teams based on search query
+  const filteredTeams = teams.filter((team) =>
+    team.teamName.toLowerCase().includes(teamSearchQuery.toLowerCase())
+  );
 
   if (isLoadingTeams) {
     return (
@@ -250,18 +257,73 @@ export default function Home() {
                   Select Your Team
                 </h2>
                 <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 border border-purple-500/30 rounded-2xl p-4">
-                  <div className="space-y-2 max-h-64 overflow-y-auto pr-2 scrollbar-thin">
-                    {teams.map((team) => (
-                      <div
-                        key={team.id}
-                        onClick={() => handleTeamSelect(team.id)}
-                        className="h-12 rounded-xl border-2 border-slate-700 bg-slate-800/30 hover:border-purple-500/50 hover:bg-slate-700/30 transition-all duration-300 cursor-pointer flex items-center px-4 group"
+                  {/* Search Input */}
+                  <div className="mb-4">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={teamSearchQuery}
+                        onChange={(e) => setTeamSearchQuery(e.target.value)}
+                        placeholder="Search teams..."
+                        className="w-full px-4 py-2.5 pl-10 bg-slate-800/70 border border-purple-500/40 rounded-xl text-purple-100 placeholder-purple-300/50 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                      />
+                      <svg
+                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-300/50"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        <span className="text-slate-300 text-sm font-medium group-hover:text-purple-300 transition-colors">
-                          {team.teamName}
-                        </span>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                      {teamSearchQuery && (
+                        <button
+                          onClick={() => setTeamSearchQuery("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300/50 hover:text-purple-300 transition-colors"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Teams List */}
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-2 scrollbar-thin">
+                    {filteredTeams.length === 0 ? (
+                      <div className="text-center py-6">
+                        <p className="text-purple-300 text-sm">
+                          No teams found matching &quot;{teamSearchQuery}&quot;
+                        </p>
                       </div>
-                    ))}
+                    ) : (
+                      filteredTeams.map((team) => (
+                        <div
+                          key={team.id}
+                          onClick={() => handleTeamSelect(team.id)}
+                          className="h-12 rounded-xl border-2 border-slate-700 bg-slate-800/30 hover:border-purple-500/50 hover:bg-slate-700/30 transition-all duration-300 cursor-pointer flex items-center px-4 group"
+                        >
+                          <span className="text-slate-300 text-sm font-medium group-hover:text-purple-300 transition-colors">
+                            {team.teamName}
+                          </span>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
@@ -343,7 +405,7 @@ export default function Home() {
                                     className="w-full h-full object-cover"
                                     draggable={false}
                                     onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
+                                      e.currentTarget.style.display = "none";
                                     }}
                                   />
                                 ) : (

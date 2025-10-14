@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { formatCooldownTime } from "@/utils/quizCooldown";
 import { getImageSrc, shouldDisplayAsText } from "@/utils/imageUtils";
 import { Character, getTierFromValue } from "../types";
@@ -18,16 +19,111 @@ export const DetectedCharacterOverlay = ({
 }: DetectedCharacterOverlayProps) => {
   const tier = character.tier || getTierFromValue(character.value);
   const themeColor = getTierThemeColor(tier);
+  const isLegendary = tier === "Legendary";
+
+  const [isExpanded, setIsExpanded] = useState(!isLegendary);
+  const [isMinimized, setIsMinimized] = useState(false);
+
+  // Auto-expand legendary cards after 5 seconds
+  useEffect(() => {
+    if (isLegendary) {
+      const timer = setTimeout(() => {
+        setIsExpanded(true);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isLegendary]);
 
   const imageSrc = getImageSrc(character.image);
   const displayAsText = shouldDisplayAsText(character.image);
   const hasContent = imageSrc || displayAsText;
 
+  const toggleMinimize = () => {
+    setIsMinimized(!isMinimized);
+  };
+
+  // Compact view for legendary characters (first 5 seconds) OR when manually minimized
+  if ((isLegendary && !isExpanded) || isMinimized) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center p-4 z-40">
+        <div
+          className={`relative bg-slate-900/60 backdrop-blur-md border-2 border-${themeColor.primary}/70 rounded-2xl px-8 py-4 shadow-2xl shadow-${themeColor.glow} animate-scaleIn transition-all duration-500`}
+        >
+          {/* Expand button - only show if manually minimized */}
+          {isMinimized && (
+            <button
+              onClick={toggleMinimize}
+              className="absolute -top-3 -right-3 w-8 h-8 bg-slate-800 hover:bg-slate-700 text-white rounded-full flex items-center justify-center border-2 border-slate-600 transition-all duration-200 z-10"
+              aria-label="Expand"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          )}
+
+          <button
+            onClick={onCollect}
+            disabled={
+              isCaught || (cooldownSeconds !== null && cooldownSeconds > 0)
+            }
+            className={`py-3 px-8 font-bold rounded-xl transition-all duration-300 ${
+              isCaught || (cooldownSeconds !== null && cooldownSeconds > 0)
+                ? "bg-slate-700 text-slate-500 cursor-not-allowed"
+                : `bg-gradient-to-r from-${themeColor.primary} to-${themeColor.secondary} hover:from-${themeColor.primary} hover:to-${themeColor.secondary} text-white transform hover:scale-105`
+            }`}
+          >
+            {isCaught
+              ? "Already Caught"
+              : cooldownSeconds && cooldownSeconds > 0
+              ? `Cooldown: ${formatCooldownTime(cooldownSeconds)}`
+              : "Collect Character"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Full view (for Common/Rare always, and Legendary after 5 seconds)
   return (
     <div className="absolute inset-0 flex items-center justify-center p-4 z-40">
       <div
-        className={`bg-slate-900/95 backdrop-blur-md border-2 border-${themeColor.primary}/70 rounded-3xl p-6 max-w-sm w-full shadow-2xl shadow-${themeColor.glow} animate-scaleIn`}
+        className={`relative bg-slate-900/30 backdrop-blur-md border-2 border-${
+          themeColor.primary
+        }/70 rounded-2xl p-6 max-w-sm w-full shadow-2xl shadow-${
+          themeColor.glow
+        } ${isLegendary ? "animate-expandIn" : "animate-scaleIn"}`}
       >
+        {/* Minimize button */}
+        <button
+          onClick={toggleMinimize}
+          className="absolute -top-3 -right-3 w-8 h-8 bg-slate-800 hover:bg-slate-700 text-white rounded-full flex items-center justify-center border-2 border-slate-600 transition-all duration-200 z-10"
+          aria-label="Minimize"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </button>
+
         <div className="flex flex-col items-center gap-4">
           {hasContent ? (
             <div
