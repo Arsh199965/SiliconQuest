@@ -77,9 +77,10 @@ export default function Home() {
     }
   }, []);
 
+  // Load uncaught count only once on mount
   useEffect(() => {
     loadUncaughtCount();
-  }, [loadUncaughtCount]);
+  }, []); // Remove loadUncaughtCount from dependencies to prevent infinite loop
 
   useEffect(() => {
     if (selectedTeamId) {
@@ -119,6 +120,11 @@ export default function Home() {
       typeof prev === "number" ? Math.max(prev - 1, 0) : prev
     );
   };
+
+  // Memoized callback to prevent infinite loop in UncaughtCharacters component
+  const handleUncaughtCountChange = useCallback((count: number) => {
+    setUncaughtCount(count);
+  }, []);
 
   const handleChangeTeam = () => {
     setSelectedTeamId(null);
@@ -472,7 +478,7 @@ export default function Home() {
       <UncaughtCharacters
         isOpen={showUncaughtModal}
         onClose={() => setShowUncaughtModal(false)}
-        onCountChange={(count) => setUncaughtCount(count)}
+        onCountChange={handleUncaughtCountChange}
       />
     </>
   );
