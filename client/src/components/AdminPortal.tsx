@@ -100,7 +100,8 @@ export default function AdminPortal({ onClose }: AdminPortalProps) {
       fetchTeams();
       fetchCards();
     }
-  }, [isLoggedIn, fetchTeams, fetchCards]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn]); // Only run when isLoggedIn changes, not when fetch functions change
 
   const handleLogin = (e: FormEvent) => {
     e.preventDefault();
